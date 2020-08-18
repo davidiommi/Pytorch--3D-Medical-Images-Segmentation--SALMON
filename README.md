@@ -22,8 +22,14 @@ See requirements.txt list
 
 ## Usage
 
-Use first organize_folder_structure.py to create organize the data in the following folder structure:
-    .
+## Usage
+
+Use first organize_folder_structure.py to create organize the data in the following folder structure.
+Modify the init.py to set the parameters and start the training/testing on the data:
+Folder Structure:
+
+
+	.
 	├── Data_folder                   
 	|   ├── train_set              
 	|   |   ├── patient_1             # Training
@@ -38,7 +44,14 @@ Use first organize_folder_structure.py to create organize the data in the follow
 	|   |   |   └── label.nii              
 	|   |   └── patient_4             
 	|   |   |   ├── image.nii              
-	|   |   |   └── label.nii        
+	|   |   |   └── label.nii              
+	|   ├── validation_set               
+	|   |   ├── patient_5            # Validation
+	|   |   |   ├── image.nii             
+	|   |   |   └── label.nii              
+	|   |   └── patient_6             
+	|   |   |   ├── image.nii              
+	|   |   |   └── label.nii         
 
 2) Modify the init.py to set the parameters and start the training/testing on the data.
 Afterwards launch the train.py for training. 	
