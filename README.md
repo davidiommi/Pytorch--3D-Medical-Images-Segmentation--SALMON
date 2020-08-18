@@ -35,9 +35,9 @@ See requirements.txt list
 	|   |   |   ├── image5.nii  
 	|   |   |   └── image6.nii                       
 	|   |   └── val             
-	|   |       ├── image7.nii                                  
-	|   |       ├── image8.nii              
-	|   |       └── image9.nii    
+	|   |   |   ├── image7.nii                                  
+	|   |   |   ├── image8.nii              
+	|   |   |   └── image9.nii    
 	|   ├── labels              
 	|   |   ├── train                       
 	|   |   |   ├── label1.nii                                  
@@ -47,9 +47,9 @@ See requirements.txt list
 	|   |   |   ├── label5.nii  
 	|   |   |   └── label6.nii                       
 	|   |   └── val             
-	|   |       ├── label7.nii                                  
-	|   |       ├── label8.nii              
-	|   |       └── label9.nii
+	|   |   |   ├── label7.nii                                  
+	|   |   |   ├── label8.nii              
+	|   |   |   └── label9.nii
 
 2) Modify the init.py to set the parameters and start the training/testing on the data.
 Afterwards launch the train.py for training. 	
