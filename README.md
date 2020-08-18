@@ -22,25 +22,7 @@ See requirements.txt list
 
 ## Usage
 
-1) Use first organize_folder_structure.py to create organize the data in the following folder structure:
-
-    .
-	├── Data_folder
-	|   ├── images              
-	|   |   ├── train                       
-	|   |   |   ├── image1.nii                                  
-	|   |   |   └── image2.nii                       
-	|   |   └── val             
-	|   |   |   ├── image3.nii                                              
-	|   |   |   └── image4.nii    
-	|   ├── labels              
-	|   |   ├── train                       
-	|   |   |   ├── label1.nii                                  
-	|   |   |   └── label2.nii                       
-	|   |   └── val             
-	|   |   |   ├── label3.nii                                              
-	|   |   |   └── label4.nii
-	
+Use first organize_folder_structure.py to create organize the data in the following folder structure:
     .
 	├── Data_folder                   
 	|   ├── train_set              
