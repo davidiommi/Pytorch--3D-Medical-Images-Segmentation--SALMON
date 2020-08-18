@@ -24,7 +24,7 @@ See requirements.txt list
 
 ## Usage
 
-Use first organize_folder_structure.py to create organize the data in the following folder structure.
+1) Use first organize_folder_structure.py to create organize the data in the following folder structure.
 Folder Structure:
 
 
@@ -47,4 +47,6 @@ Folder Structure:
    
 
 2) Modify the init.py to set the parameters and start the training/testing on the data.
-Afterwards launch the train.py for training. 	
+Afterwards launch the train.py for training. Tensorboard is available to monitor the training:	
+![training](images/salmon3.JPG)
+![training2](images/salmon4.JPG)
