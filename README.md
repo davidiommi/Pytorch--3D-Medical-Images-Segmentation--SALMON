@@ -27,26 +27,26 @@ See requirements.txt list
 	├── Data_folder
 	|   ├── images              
 	|   |   ├── train                       
-	|   |   |   └── image1.nii                                  
+	|   |   |   ├──image1.nii                                  
 	|   |   |   ├── image2.nii  
 	|   |   |   ├── image3.nii  
 	|   |   |   ├── image4.nii  
 	|   |   |   ├── image5.nii  
 	|   |   |   └── image6.nii                       
 	|   |   └── val             
-	|   |   |   └── image7.nii                                  
+	|   |   |   ├── image7.nii                                  
 	|   |   |   ├── image8.nii              
 	|   |   |   └── image9.nii    
 	|   ├── labels              
 	|   |   ├── train                       
-	|   |   |   └── label1.nii                                  
+	|   |   |   ├── label1.nii                                  
 	|   |   |   ├── label2.nii  
 	|   |   |   ├── label3.nii  
 	|   |   |   ├── label4.nii  
 	|   |   |   ├── label5.nii  
 	|   |   |   └── label6.nii                       
 	|   |   └── val             
-	|   |   |   └── label7.nii                                  
+	|   |   |   ├── label7.nii                                  
 	|   |   |   ├── label8.nii              
 	|   |   |   └── label9.nii
 
