@@ -3,10 +3,10 @@
 SALMON is a computational toolbox for segmentation using neural networks.
 SALMON is based on MONAI: a PyTorch-based, open-source framework for deep learning in healthcare imaging. (https://github.com/Project-MONAI/MONAI)
 
-### Requirements
+## Requirements
 See requirements.txt list
 
-### Python scripts and their function
+## Python scripts and their function
 
 - organize_folder_structure.py: Organize the data in the folder structure for the network
 
@@ -22,7 +22,7 @@ See requirements.txt list
 
 ## Usage
 
-# Use first organize_folder_structure.py to create organize the data in the following folder structure.
+### Use first organize_folder_structure.py to create organize the data in the following folder structure.
 Folder Structure:
 
 
@@ -44,14 +44,14 @@ Folder Structure:
 	|   |   |   └── label4.nii              
    
 
-# Modify the init.py to set the parameters and start the training/testing on the data.
+### Modify the init.py to set the parameters and start the training/testing on the data.
 Afterwards launch the train.py for training. Tensorboard is available to monitor the training:	
 ![training](images/salmon3.JPG)
 ![training2](images/salmon4.JPG)
 
-# Launch predict_single_image.py to test the network. Modify the parameters in the parse section to select the weights and images to infer.
+### Launch predict_single_image.py to test the network. Modify the parameters in the parse section to select the weights and images to infer.
 
-## To Do
+### To Do
 - correct parse section
 - add more networks
 - implement it for multilabel segmentation in the same script
