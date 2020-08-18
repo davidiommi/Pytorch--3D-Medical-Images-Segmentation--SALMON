@@ -40,6 +40,23 @@ See requirements.txt list
 	|   |   └── val             
 	|   |   |   ├── label3.nii                                              
 	|   |   |   └── label4.nii
+	
+    .
+	├── Data_folder                   
+	|   ├── train_set              
+	|   |   ├── patient_1             # Training
+	|   |   |   ├── image.nii              
+	|   |   |   └── label.nii                     
+	|   |   └── patient_2             
+	|   |   |   ├── image.nii              
+	|   |   |   └── label.nii              
+	|   ├── test_set               
+	|   |   ├── patient_3             # Testing
+	|   |   |   ├── image.nii              
+	|   |   |   └── label.nii              
+	|   |   └── patient_4             
+	|   |   |   ├── image.nii              
+	|   |   |   └── label.nii        
 
 2) Modify the init.py to set the parameters and start the training/testing on the data.
 Afterwards launch the train.py for training. 	
