@@ -28,7 +28,7 @@ See requirements.txt list
 	├── Data_folder
 	|   ├── images              
 	|   |   ├── train                       
-	|   |   |   ├──image1.nii                                  
+	|   |   |   ├── image1.nii                                  
 	|   |   |   ├── image2.nii  
 	|   |   |   ├── image3.nii  
 	|   |   |   ├── image4.nii  
