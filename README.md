@@ -24,6 +24,7 @@ See requirements.txt list
 
 1) Use first organize_folder_structure.py to create organize the data in the following folder structure:
 
+    .
 	├── Data_folder
 	|   ├── images              
 	|   |   ├── train                       
