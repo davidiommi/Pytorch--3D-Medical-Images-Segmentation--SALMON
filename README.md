@@ -29,27 +29,17 @@ See requirements.txt list
 	|   ├── images              
 	|   |   ├── train                       
 	|   |   |   ├── image1.nii                                  
-	|   |   |   ├── image2.nii  
-	|   |   |   ├── image3.nii  
-	|   |   |   ├── image4.nii  
-	|   |   |   ├── image5.nii  
-	|   |   |   └── image6.nii                       
+	|   |   |   └── image2.nii                       
 	|   |   └── val             
-	|   |   |   ├── image7.nii                                  
-	|   |   |   ├── image8.nii              
-	|   |   |   └── image9.nii    
+	|   |   |   ├── image3.nii                                              
+	|   |   |   └── image4.nii    
 	|   ├── labels              
 	|   |   ├── train                       
 	|   |   |   ├── label1.nii                                  
-	|   |   |   ├── label2.nii  
-	|   |   |   ├── label3.nii  
-	|   |   |   ├── label4.nii  
-	|   |   |   ├── label5.nii  
-	|   |   |   └── label6.nii                       
+	|   |   |   └── label2.nii                       
 	|   |   └── val             
-	|   |   |   ├── label7.nii                                  
-	|   |   |   ├── label8.nii              
-	|   |   |   └── label9.nii
+	|   |   |   ├── label3.nii                                              
+	|   |   |   └── label4.nii
 
 2) Modify the init.py to set the parameters and start the training/testing on the data.
 Afterwards launch the train.py for training. 	
