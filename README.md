@@ -25,33 +25,26 @@ See requirements.txt list
 ## Usage
 
 Use first organize_folder_structure.py to create organize the data in the following folder structure.
-Modify the init.py to set the parameters and start the training/testing on the data:
 Folder Structure:
 
 
 	.
 	├── Data_folder                   
-	|   ├── train_set              
-	|   |   ├── patient_1             # Training
-	|   |   |   ├── image.nii              
-	|   |   |   └── label.nii                     
-	|   |   └── patient_2             
-	|   |   |   ├── image.nii              
-	|   |   |   └── label.nii              
-	|   ├── test_set               
-	|   |   ├── patient_3             # Testing
-	|   |   |   ├── image.nii              
-	|   |   |   └── label.nii              
-	|   |   └── patient_4             
-	|   |   |   ├── image.nii              
-	|   |   |   └── label.nii              
-	|   ├── validation_set               
-	|   |   ├── patient_5            # Validation
-	|   |   |   ├── image.nii             
-	|   |   |   └── label.nii              
-	|   |   └── patient_6             
-	|   |   |   ├── image.nii              
-	|   |   |   └── label.nii         
+	|   ├── train              
+	|   |   ├── images             # Training
+	|   |   |   ├── image1.nii              
+	|   |   |   └── image2.nii                     
+	|   |   └── labels             
+	|   |   |   ├── label1.nii              
+	|   |   |   └── label2.nii              
+	|   ├── val               
+	|   |   ├── images             # Validation
+	|   |   |   ├── image3.nii              
+	|   |   |   └── image4.nii              
+	|   |   └── labels             
+	|   |   |   ├── label3.nii              
+	|   |   |   └── label4.nii              
+   
 
 2) Modify the init.py to set the parameters and start the training/testing on the data.
 Afterwards launch the train.py for training. 	
