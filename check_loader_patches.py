@@ -23,7 +23,7 @@ import monai
 from monai.data import ArrayDataset, GridPatchDataset, create_test_image_3d
 from monai.transforms import (Compose, LoadNiftid, AddChanneld, Transpose,
                               ScaleIntensityd, ToTensord, RandSpatialCropd, Rand3DElasticd, RandAffined,
-    Spacingd, Orientationd, RandShiftIntensityd, RandGaussianNoised, BorderPadd,RandAdjustContrastd, NormalizeIntensityd,RandFlipd, ScaleIntensityRanged)
+    Spacingd, Orientationd, RandZoomd, RandShiftIntensityd, RandGaussianNoised, BorderPadd,RandAdjustContrastd, NormalizeIntensityd,RandFlipd, ScaleIntensityRanged)
 
 
 class IndexTracker(object):
@@ -65,8 +65,6 @@ if __name__ == "__main__":
 
     opt = Options().parse()
 
-
-
     train_images = sorted(glob(os.path.join(opt.images_folder, 'train', 'image*.nii')))
     train_segs = sorted(glob(os.path.join(opt.labels_folder, 'train', 'label*.nii')))
 
@@ -79,11 +77,12 @@ if __name__ == "__main__":
         AddChanneld(keys=['image', 'label']),
         NormalizeIntensityd(keys=['image']),
         ScaleIntensityd(keys=['image']),
+        # Spacingd(keys=['image', 'label'], pixdim=opt.resolution, mode=('bilinear', 'nearest')),
         # RandFlipd(keys=['image', 'label'], prob=1, spatial_axis=2),
         # RandAffined(keys=['image', 'label'], mode=('bilinear', 'nearest'), prob=1,
         #             rotate_range=(np.pi / 36, np.pi / 4, np.pi / 36)),
-        # Rand3DElasticd(keys=['image', 'label'], mode=('bilinear', 'nearest'), prob=1,
-        #                sigma_range=(5, 8), magnitude_range=(100, 200), rotate_range=(np.pi / 36, np.pi / 4, np.pi / 36), scale_range=(0.15, 0.15, 0.15)),
+        Rand3DElasticd(keys=['image', 'label'], mode=('bilinear', 'nearest'), prob=1,
+                       sigma_range=(5, 8), magnitude_range=(100, 200), scale_range=(0.20, 0.20, 0.20)),
         # RandAdjustContrastd(keys=['image'], gamma=(0.5, 3), prob=1),
         # RandGaussianNoised(keys=['image'], prob=1, mean=np.random.uniform(0, 0.5), std=np.random.uniform(0, 1)),
         # RandShiftIntensityd(keys=['image'], offsets=np.random.uniform(0,0.3), prob=1),

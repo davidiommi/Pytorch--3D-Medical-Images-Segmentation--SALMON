@@ -12,8 +12,8 @@ from collections import OrderedDict
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--image", type=str, default='./Data_folder/images/test/image0.nii')
-parser.add_argument("--label", type=str, default='./Data_folder/labels/test/label0.nii')
+parser.add_argument("--image", type=str, default='./Data_folder/images/train/image10.nii')
+parser.add_argument("--label", type=str, default='./Data_folder/labels/train/label10.nii')
 parser.add_argument("--result", type=str, default='./result.nii', help='path to the .nii result to save')
 parser.add_argument("--weights", type=str, default='./best_metric_model.pth', help='network weights to load')
 parser.add_argument("--resolution", default=None, help='New resolution')
