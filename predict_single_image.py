@@ -8,16 +8,29 @@ import SimpleITK as sitk
 from monai.inferers import sliding_window_inference
 from monai.metrics import DiceMetric
 from monai.data import NiftiSaver, create_test_image_3d, list_data_collate
+from collections import OrderedDict
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--image", type=str, default='./Data_folder/images/val/image20.nii')
-parser.add_argument("--label", type=str, default='./Data_folder/labels/val/label20.nii')
+parser.add_argument("--image", type=str, default='./Data_folder/images/test/image0.nii')
+parser.add_argument("--label", type=str, default='./Data_folder/labels/test/label0.nii')
 parser.add_argument("--result", type=str, default='./result.nii', help='path to the .nii result to save')
-parser.add_argument("--weights", type=str, default='./unet_david.pth', help='network weights to load')
-parser.add_argument("--resolution", default=(0.520833 * 1.4, 0.520833 * 1.4, 1.000 * 1.4), help='New resolution')
-parser.add_argument("--patch_size", type=int, nargs=3, default=(128, 128, 128), help="Input dimension for the generator")
+parser.add_argument("--weights", type=str, default='./best_metric_model.pth', help='network weights to load')
+parser.add_argument("--resolution", default=None, help='New resolution')
+parser.add_argument("--patch_size", type=int, nargs=3, default=(192, 192, 160), help="Input dimension for the generator")
 args = parser.parse_args()
+
+
+def new_state_dict(file_name):
+    state_dict = torch.load(file_name)
+    new_state_dict = OrderedDict()
+    for k, v in state_dict.items():
+        if k[:6] == 'module':
+            name = k[7:]
+            new_state_dict[name] = v
+        else:
+            new_state_dict[k] = v
+    return new_state_dict
 
 
 def from_numpy_to_itk(image_np, image_itk):
@@ -136,17 +149,21 @@ def segment(image, label, result, weights, resolution, patch_size):
 
     # try to use all the available GPUs
     devices = get_devices_spec(None)
-
-    # build the network
-    net = build_net()
-    net = net.to(devices[0])
+    os.environ['CUDA_VISIBLE_DEVICES'] = opt.gpu_ids  # Multi-gpu selector for training
 
     if len(devices) > 1:
+
+        # build the network
+        net = build_net()
+        net = net.to(devices[0])
+
         net = torch.nn.DataParallel(net, device_ids=devices)
         net.load_state_dict(torch.load(weights))
+
     else:
-        net = net.to(devices[0])
-        net.load_state_dict(torch.load(weights))
+
+        net = build_net().cuda()
+        net.load_state_dict(new_state_dict(weights))
 
     # define sliding window size and batch size for windows inference
     roi_size = patch_size
@@ -157,7 +174,7 @@ def segment(image, label, result, weights, resolution, patch_size):
 
         if label is None:
             for val_data in val_loader:
-                val_images = val_data["image"].to(devices[0])
+                val_images = val_data["image"].cuda()
                 # define sliding window size and batch size for windows inference
                 val_outputs = sliding_window_inference(val_images, roi_size, sw_batch_size, net)
                 val_outputs = (val_outputs.sigmoid() >= 0.5).float()
@@ -166,7 +183,7 @@ def segment(image, label, result, weights, resolution, patch_size):
             metric_sum = 0.0
             metric_count = 0
             for val_data in val_loader:
-                val_images, val_labels = val_data["image"].to(devices[0]), val_data["label"].to(devices[0])
+                val_images, val_labels = val_data["image"].cuda(), val_data["label"].cuda()
                 # define sliding window size and batch size for windows inference
                 val_outputs = sliding_window_inference(val_images, roi_size, sw_batch_size, net)
                 value = dice_metric(y_pred=val_outputs, y=val_labels)
@@ -220,6 +237,9 @@ def segment(image, label, result, weights, resolution, patch_size):
 
 
 if __name__ == "__main__":
+
+    from init import Options
+    opt = Options().parse()
 
     segment(args.image, args.label, args.result, args.weights, args.resolution, args.patch_size)
 

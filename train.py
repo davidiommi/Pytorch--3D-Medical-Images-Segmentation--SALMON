@@ -30,7 +30,7 @@ from monai.inferers import sliding_window_inference
 from monai.metrics import DiceMetric
 from monai.transforms import (Compose, LoadNiftid, AddChanneld, Transpose,
                               ScaleIntensityd, ToTensord, RandSpatialCropd, Rand3DElasticd, RandAffined,
-    Spacingd, Orientationd, RandGaussianNoised, RandAdjustContrastd,NormalizeIntensityd,RandFlipd)
+    Spacingd, Orientationd, RandShiftIntensityd, BorderPadd, RandGaussianNoised, RandAdjustContrastd,NormalizeIntensityd,RandFlipd)
 
 from monai.visualize import plot_2d_or_3d_image
 from monai.engines import get_devices_spec
@@ -52,9 +52,16 @@ def main():
     train_images = sorted(glob(os.path.join(opt.images_folder, 'train', 'image*.nii')))
     train_segs = sorted(glob(os.path.join(opt.labels_folder, 'train', 'label*.nii')))
 
+    train_images_for_dice = sorted(glob(os.path.join(opt.images_folder, 'train', 'image*.nii')))
+    train_segs_for_dice = sorted(glob(os.path.join(opt.labels_folder, 'train', 'label*.nii')))
+
     # validation images
     val_images = sorted(glob(os.path.join(opt.images_folder, 'val', 'image*.nii')))
     val_segs = sorted(glob(os.path.join(opt.labels_folder, 'val', 'label*.nii')))
+
+    # test images
+    test_images = sorted(glob(os.path.join(opt.images_folder, 'test', 'image*.nii')))
+    test_segs = sorted(glob(os.path.join(opt.labels_folder, 'test', 'label*.nii')))
 
     # augment the data list for training
     for i in range(int(opt.increase_factor_data)):
@@ -62,19 +69,26 @@ def main():
         train_images.extend(train_images)
         train_segs.extend(train_segs)
 
-        val_images.extend(val_images)
-        val_segs.extend(val_segs)
-
     print('Number of training patches per epoch:', len(train_images))
-    print('Number of validation patches per epoch:', len(val_images))
+    print('Number of training images per epoch:', len(train_images_for_dice))
+    print('Number of validation images per epoch:', len(val_images))
+    print('Number of test images per epoch:', len(test_images))
 
     # Creation of data directories for data_loader
 
     train_dicts = [{'image': image_name, 'label': label_name}
                   for image_name, label_name in zip(train_images, train_segs)]
 
+    train_dice_dicts = [{'image': image_name, 'label': label_name}
+                   for image_name, label_name in zip(train_images_for_dice, train_segs_for_dice)]
+
     val_dicts = [{'image': image_name, 'label': label_name}
                    for image_name, label_name in zip(val_images, val_segs)]
+
+    test_dicts = [{'image': image_name, 'label': label_name}
+                 for image_name, label_name in zip(test_images, test_segs)]
+
+    # Transforms list
 
     if opt.resolution is not None:
         train_transforms = [
@@ -84,13 +98,20 @@ def main():
             ScaleIntensityd(keys=['image']),
             Spacingd(keys=['image', 'label'], pixdim=opt.resolution, mode=('bilinear', 'nearest')),
             RandFlipd(keys=['image', 'label'], prob=0.1, spatial_axis=1),
+            RandFlipd(keys=['image', 'label'], prob=0.1, spatial_axis=0),
+            RandFlipd(keys=['image', 'label'], prob=0.1, spatial_axis=2),
             RandAffined(keys=['image', 'label'], mode=('bilinear', 'nearest'), prob=0.1,
-                        rotate_range=(np.pi / 36, np.pi / 36, np.pi * 4)),
+                        rotate_range=(np.pi / 36, np.pi / 36, np.pi * 4), padding_mode="zeros"),
+            RandAffined(keys=['image', 'label'], mode=('bilinear', 'nearest'), prob=0.1,
+                        rotate_range=(np.pi / 36, np.pi / 4, np.pi / 36), padding_mode="zeros"),
+            RandAffined(keys=['image', 'label'], mode=('bilinear', 'nearest'), prob=0.1,
+                        rotate_range=(np.pi / 4, np.pi / 36, np.pi / 36), padding_mode="zeros"),
             Rand3DElasticd(keys=['image', 'label'], mode=('bilinear', 'nearest'), prob=0.1,
-                           sigma_range=(5, 8), magnitude_range=(100, 200)),
-            RandAdjustContrastd(keys=['image'], prob=0.1),
-            RandGaussianNoised(keys=['image'],
-                               prob=0.1, mean=0.0, std=0.1),
+                           sigma_range=(5, 8), magnitude_range=(100, 200),
+                           rotate_range=(np.pi / 36, np.pi / 4, np.pi / 36), scale_range=(0.15, 0.15, 0.15), padding_mode="zeros"),
+            RandAdjustContrastd(keys=['image'], gamma=(0.5, 2.5), prob=0.1),
+            RandGaussianNoised(keys=['image'], prob=0.1, mean=np.random.uniform(0, 0.5), std=np.random.uniform(0, 1)),
+            RandShiftIntensityd(keys=['image'], offsets=np.random.uniform(0,0.3), prob=0.1),
             RandSpatialCropd(keys=['image', 'label'], roi_size=opt.patch_size, random_size=False),
             ToTensord(keys=['image', 'label'])
         ]
@@ -101,7 +122,6 @@ def main():
             NormalizeIntensityd(keys=['image']),
             ScaleIntensityd(keys=['image']),
             Spacingd(keys=['image', 'label'], pixdim=opt.resolution, mode=('bilinear', 'nearest')),
-            RandSpatialCropd(keys=['image', 'label'], roi_size=opt.patch_size, random_size=False),
             ToTensord(keys=['image', 'label'])
         ]
     else:
@@ -111,13 +131,20 @@ def main():
             NormalizeIntensityd(keys=['image']),
             ScaleIntensityd(keys=['image']),
             RandFlipd(keys=['image', 'label'], prob=0.1, spatial_axis=1),
+            RandFlipd(keys=['image', 'label'], prob=0.1, spatial_axis=0),
+            RandFlipd(keys=['image', 'label'], prob=0.1, spatial_axis=2),
             RandAffined(keys=['image', 'label'], mode=('bilinear', 'nearest'), prob=0.1,
                         rotate_range=(np.pi / 36, np.pi / 36, np.pi * 4)),
+            RandAffined(keys=['image', 'label'], mode=('bilinear', 'nearest'), prob=0.1,
+                        rotate_range=(np.pi / 36, np.pi / 4, np.pi / 36)),
+            RandAffined(keys=['image', 'label'], mode=('bilinear', 'nearest'), prob=0.1,
+                        rotate_range=(np.pi / 4, np.pi / 36, np.pi / 36)),
             Rand3DElasticd(keys=['image', 'label'], mode=('bilinear', 'nearest'), prob=0.1,
-                           sigma_range=(5, 8), magnitude_range=(100, 200)),
-            RandAdjustContrastd(keys=['image'], prob=0.1),
-            RandGaussianNoised(keys=['image'],
-                               prob=0.1, mean=0.0, std=0.1),
+                           sigma_range=(5, 8), magnitude_range=(100, 200),
+                           rotate_range=(np.pi / 36, np.pi / 4, np.pi / 36), scale_range=(0.15, 0.15, 0.15)),
+            RandAdjustContrastd(keys=['image'],  gamma=(0.5, 2.5), prob=0.1),
+            RandGaussianNoised(keys=['image'], prob=0.1, mean=np.random.uniform(0, 0.5), std=np.random.uniform(0, 1)),
+            RandShiftIntensityd(keys=['image'], offsets=np.random.uniform(0,0.3), prob=0.1),
             RandSpatialCropd(keys=['image', 'label'], roi_size=opt.patch_size, random_size=False),
             ToTensord(keys=['image', 'label'])
         ]
@@ -127,7 +154,6 @@ def main():
             AddChanneld(keys=['image', 'label']),
             NormalizeIntensityd(keys=['image']),
             ScaleIntensityd(keys=['image']),
-            RandSpatialCropd(keys=['image', 'label'], roi_size=opt.patch_size, random_size=False),
             ToTensord(keys=['image', 'label'])
         ]
 
@@ -138,9 +164,17 @@ def main():
     check_train = monai.data.Dataset(data=train_dicts, transform=train_transforms)
     train_loader = DataLoader(check_train, batch_size=opt.batch_size, shuffle=True, num_workers=opt.workers, pin_memory=torch.cuda.is_available())
 
+    # create a training_dice data loader
+    check_val = monai.data.Dataset(data=train_dice_dicts, transform=val_transforms)
+    train_dice_loader = DataLoader(check_val, batch_size=1, num_workers=opt.workers, pin_memory=torch.cuda.is_available())
+
     # create a validation data loader
     check_val = monai.data.Dataset(data=val_dicts, transform=val_transforms)
     val_loader = DataLoader(check_val, batch_size=1, num_workers=opt.workers, pin_memory=torch.cuda.is_available())
+
+    # create a validation data loader
+    check_val = monai.data.Dataset(data=test_dicts, transform=val_transforms)
+    test_loader = DataLoader(check_val, batch_size=1, num_workers=opt.workers, pin_memory=torch.cuda.is_available())
 
     # try to use all the available GPUs
     devices = get_devices_spec(None)
@@ -194,37 +228,54 @@ def main():
         if (epoch + 1) % val_interval == 0:
             net.eval()
             with torch.no_grad():
-                metric_sum = 0.0
-                metric_count = 0
-                val_images = None
-                val_labels = None
-                val_outputs = None
-                for val_data in val_loader:
-                    val_images, val_labels = val_data["image"].cuda(), val_data["label"].cuda()
-                    roi_size = opt.patch_size
-                    sw_batch_size = 4
-                    val_outputs = sliding_window_inference(val_images, roi_size, sw_batch_size, net)
-                    value = dice_metric(y_pred=val_outputs, y=val_labels)
-                    metric_count += len(value)
-                    metric_sum += value.item() * len(value)
-                metric = metric_sum / metric_count
-                metric_values.append(metric)
+
+                def plot_dice(images_loader):
+
+                    metric_sum = 0.0
+                    metric_count = 0
+                    val_images = None
+                    val_labels = None
+                    val_outputs = None
+                    for data in images_loader:
+                        val_images, val_labels = data["image"].cuda(), data["label"].cuda()
+                        roi_size = opt.patch_size
+                        sw_batch_size = 4
+                        val_outputs = sliding_window_inference(val_images, roi_size, sw_batch_size, net)
+                        value = dice_metric(y_pred=val_outputs, y=val_labels)
+                        metric_count += len(value)
+                        metric_sum += value.item() * len(value)
+                    metric = metric_sum / metric_count
+                    metric_values.append(metric)
+                    return metric, val_images, val_labels, val_outputs
+
+                metric, val_images, val_labels, val_outputs = plot_dice(val_loader)
+
+                # Save best model
                 if metric > best_metric:
                     best_metric = metric
                     best_metric_epoch = epoch + 1
                     torch.save(net.state_dict(), "best_metric_model.pth")
                     print("saved new best metric model")
+
+                metric_train, train_images, train_labels, train_outputs = plot_dice(train_dice_loader)
+                metric_test, test_images, test_labels, test_outputs = plot_dice(test_loader)
+
+                # Logger bar
                 print(
-                    "current epoch: {} current mean dice: {:.4f} best mean dice: {:.4f} at epoch {}".format(
-                        epoch + 1, metric, best_metric, best_metric_epoch
+                    "current epoch: {} Training dice: {:.4f} Validation dice: {:.4f} Testing dice: {:.4f} Best Validation dice: {:.4f} at epoch {}".format(
+                        epoch + 1, metric_train, metric, metric_test, best_metric, best_metric_epoch
                     )
                 )
-                writer.add_scalar("val_mean_dice", metric, epoch + 1)
+
+                writer.add_scalar("Mean_epoch_loss", epoch_loss, epoch + 1)
+                writer.add_scalar("Testing_dice", metric_test, epoch + 1)
+                writer.add_scalar("Training_dice", metric_train, epoch + 1)
+                writer.add_scalar("Validation_dice", metric, epoch + 1)
                 # plot the last model output as GIF image in TensorBoard with the corresponding image and label
                 val_outputs = (val_outputs.sigmoid() >= 0.5).float()
-                plot_2d_or_3d_image(val_images, epoch + 1, writer, index=0, tag="image")
-                plot_2d_or_3d_image(val_labels, epoch + 1, writer, index=0, tag="label")
-                plot_2d_or_3d_image(val_outputs, epoch + 1, writer, index=0, tag="output")
+                plot_2d_or_3d_image(val_images, epoch + 1, writer, index=0, tag="validation image")
+                plot_2d_or_3d_image(val_labels, epoch + 1, writer, index=0, tag="validation label")
+                plot_2d_or_3d_image(val_outputs, epoch + 1, writer, index=0, tag="validation inference")
 
     print(f"train completed, best_metric: {best_metric:.4f} at epoch: {best_metric_epoch}")
     writer.close()

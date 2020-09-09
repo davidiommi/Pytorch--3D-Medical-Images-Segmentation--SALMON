@@ -15,19 +15,19 @@ class Options():
         parser.add_argument('--labels_folder', type=str, default='./Data_folder/labels')
         parser.add_argument('--increase_factor_data',  default=4, help='Increase data number per epoch')
         parser.add_argument('--preload', type=str, default=None)
-        parser.add_argument('--gpu_ids', type=str, default='2,3', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
+        parser.add_argument('--gpu_ids', type=str, default='3', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
         parser.add_argument('--workers', default=8, type=int, help='number of data loading workers')
 
         # dataset parameters
-        parser.add_argument('--patch_size', default=(128, 128, 128), help='Size of the patches extracted from the image')
-        parser.add_argument('--resolution', default=(0.520833 * 1.4, 0.520833 * 1.4, 1.000 * 1.4), help='New Resolution')
+        parser.add_argument('--patch_size', default=(192, 192, 160), help='Size of the patches extracted from the image')
+        parser.add_argument('--resolution', default=None, help='New Resolution')
         parser.add_argument('--batch_size', type=int, default=4, help='batch size')
         parser.add_argument('--in_channels', default=1, type=int, help='Channels of the input')
         parser.add_argument('--out_channels', default=1, type=int, help='Channels of the output')
 
         # training parameters
-        parser.add_argument('--epochs', default=200, help='Number of epochs')
-        parser.add_argument('--net', type=str, default='Unet_David', help='[HighResNet | Unet_Monai | '
+        parser.add_argument('--epochs', default=300, help='Number of epochs')
+        parser.add_argument('--net', type=str, default='Unet_Monai', help='[HighResNet | Unet_Monai | '
                                                                           'Unet_David]')
         parser.add_argument('--lr', default=0.001, help='Learning rate')
         parser.add_argument('--weight_decay', default=1e-4, help='patience')

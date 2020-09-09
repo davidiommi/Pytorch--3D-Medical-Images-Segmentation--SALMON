@@ -81,7 +81,7 @@ def build_net():
         channels=(32, 64, 128, 256, 512),
         strides=(2, 2, 2, 2),
         act=act_type,
-        num_res_units=4,
+        num_res_units=5,
         dropout=0.2,
         norm=Norm.BATCH,
 
