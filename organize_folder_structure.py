@@ -32,7 +32,7 @@ def lstFiles(Path):
 parser = argparse.ArgumentParser()
 parser.add_argument('--images', default='./Data_folder/imagesTr', help='path to the images')
 parser.add_argument('--labels', default='./Data_folder/labelsTr', help='path to the labels')
-parser.add_argument('--split_val', default=2, help='number of images for validation')
+parser.add_argument('--split_val', default=3, help='number of images for validation')
 parser.add_argument('--split_test', default=1, help='number of images for testing')
 args = parser.parse_args()
 

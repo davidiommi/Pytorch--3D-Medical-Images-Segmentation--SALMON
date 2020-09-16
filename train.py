@@ -107,7 +107,7 @@ def main():
             RandAffined(keys=['image', 'label'], mode=('bilinear', 'nearest'), prob=0.1,
                         rotate_range=(np.pi / 2, np.pi / 36, np.pi / 36), padding_mode="zeros"),
             Rand3DElasticd(keys=['image', 'label'], mode=('bilinear', 'nearest'), prob=0.1,
-                           sigma_range=(5, 8), magnitude_range=(100, 200), scale_range=(0.20, 0.20, 0.20),
+                           sigma_range=(5, 8), magnitude_range=(100, 200), scale_range=(0.15, 0.15, 0.15),
                            padding_mode="zeros"),
             RandAdjustContrastd(keys=['image'], gamma=(0.5, 2.5), prob=0.1),
             RandGaussianNoised(keys=['image'], prob=0.1, mean=np.random.uniform(0, 0.5), std=np.random.uniform(0, 1)),
@@ -140,7 +140,7 @@ def main():
             RandAffined(keys=['image', 'label'], mode=('bilinear', 'nearest'), prob=0.1,
                         rotate_range=(np.pi / 2, np.pi / 36, np.pi / 36), padding_mode="zeros"),
             Rand3DElasticd(keys=['image', 'label'], mode=('bilinear', 'nearest'), prob=0.1,
-                           sigma_range=(5, 8), magnitude_range=(100, 200), scale_range=(0.20, 0.20, 0.20), padding_mode="zeros"),
+                           sigma_range=(5, 8), magnitude_range=(100, 200), scale_range=(0.15, 0.15, 0.15), padding_mode="zeros"),
             RandAdjustContrastd(keys=['image'],  gamma=(0.5, 2.5), prob=0.1),
             RandGaussianNoised(keys=['image'], prob=0.1, mean=np.random.uniform(0, 0.5), std=np.random.uniform(0, 1)),
             RandShiftIntensityd(keys=['image'], offsets=np.random.uniform(0,0.3), prob=0.1),
@@ -189,9 +189,9 @@ def main():
         net.load_state_dict(torch.load(opt.preload))
 
     dice_metric = DiceMetric(include_background=True, to_onehot_y=False, sigmoid=True, reduction="mean")
-    loss_function = monai.losses.DiceLoss(sigmoid=True)
-    lr = opt.lr
-    optim = torch.optim.Adam(net.parameters(), lr=lr, amsgrad=True)
+    # loss_function = monai.losses.DiceLoss(sigmoid=True)
+    loss_function = monai.losses.TverskyLoss(sigmoid=True, alpha=0.3, beta=0.7)
+    optim = torch.optim.Adam(net.parameters(), lr=opt.lr)
     net_scheduler = get_scheduler(optim, opt)
 
     # start a typical PyTorch training

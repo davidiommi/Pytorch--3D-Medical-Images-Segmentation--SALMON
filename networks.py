@@ -78,10 +78,10 @@ def build_net():
         dimensions=3,
         in_channels=opt.in_channels,
         out_channels=opt.out_channels,
-        channels=(32, 64, 128, 256, 512),
+        channels=(64, 128, 256, 512, 1024),
         strides=(2, 2, 2, 2),
         act=act_type,
-        num_res_units=5,
+        num_res_units=3,
         dropout=0.2,
         norm=Norm.BATCH,
 
