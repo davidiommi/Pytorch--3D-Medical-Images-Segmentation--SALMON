@@ -50,8 +50,13 @@ Afterwards launch the train.py for training. Tensorboard is available to monitor
 ![training2](images/salmon4.JPG)
 
 3.Launch predict_single_image.py to test the network. Modify the parameters in the parse section to select the weights and images to infer.
+
+### Sample script inference
+```console
+C:\Users\David\Desktop\3D GAN>python predict_single_image.py --image C:\Users\David\Desktop\test_image.nii --result C:\Users\David\Desktop\result.nii --gen_weights C:\Users\David\Desktop\weights.h5
+```
 *******************************************************************************
 ### To Do
-- correct parse section in predict_single_image.py (conflict between opt and args.parse)
+
 - add more networks structures in network.py
 - implement it for multilabel segmentation in the same script. (call multilabel losses)
