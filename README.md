@@ -4,8 +4,8 @@ SALMON is a computational toolbox for segmentation using neural networks.
 SALMON is based on MONAI: a PyTorch-based, open-source framework for deep learning in healthcare imaging. (https://github.com/Project-MONAI/MONAI)
 *******************************************************************************
 ## Requirements
-See requirements.txt list. We use nvcr.io/nvidia/pytorch:19.03-py3 docker and we install all the requirements with:
-pip install -r requirements.txt
+See requirements.txt list. We use "nvcr.io/nvidia/pytorch:19.03-py3" docker and we install all the requirements with:
+"pip install -r requirements.txt"
 *******************************************************************************
 ## Python scripts and their function
 
@@ -22,9 +22,8 @@ pip install -r requirements.txt
 - predict_single_image.py: It launches the inference on a single input image chosen by the user.
 *******************************************************************************
 ## Usage
-
-1.Use first organize_folder_structure.py to create organize the data in the following folder structure.
-Folder Structure:
+Folders structure:
+Use first "organize_folder_structure.py" to create organize the data in the following folder structure:
 
 
 	.
@@ -51,7 +50,8 @@ Folder Structure:
 	|   |   |   ├── label5.nii              
 	|   |   |   └── label6.nii  
 *******************************************************************************
-2.Modify the init.py to set the parameters and start the training/testing on the data.
+Training:
+Modify the "init.py" to set the parameters and start the training/testing on the data.
 Afterwards launch the train.py for training. Tensorboard is available to monitor the training:	
 
 ![training](images/salmon3.JPG)![training2](images/salmon4.JPG)![training3](images/salmon5.JPG)![training2´4](images/salmon6.JPG)
@@ -61,14 +61,20 @@ The following images show the segmentation of carotid artery from MR sequence
 
 ![Image](images/image.gif)![result](images/result.gif)![label](images/label.gif)
 *******************************************************************************
-3.Launch predict_single_image.py to test the network. Modify the parameters in the parse section to select the path of the weights, images to infer and result. 
+Inference:
+Launch "predict_single_image.py" to test the network. Modify the parameters in the parse section to select the path of the weights, images to infer and result. 
+*******************************************************************************
+Tips:
+Use and modify "check_loader_patches.py" to check the patches fed during training. 
+Use and modify "networkds.py" to modify the network and check the number of parameters. 
+
 
 ### Sample script inference
 ```console
 python predict_single_image.py --image './Data_folder/images/train/image13.nii' --label './Data_folder/labels/train/label13.nii' --result './Data_folder/results/train/prova.nii'
 ```
 *******************************************************************************
-### To Do
+### Future Development: TO DO list
 
-- add more networks structures in network.py
-- implement it for multilabel segmentation in the same script. (call multilabel losses)
+- Add more networks structures in networks.py
+- Implement it for multilabel segmentation in the same script. (call multilabel losses)
