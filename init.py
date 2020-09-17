@@ -37,6 +37,7 @@ class Options():
         # Inference
         # This is just a trick to make the predict script working
         parser.add_argument('--result', default=None, help='Keep this empty and go to predict_single_image script')
+        parser.add_argument('--weights', default=None, help='Keep this empty and go to predict_single_image script')
 
         self.initialized = True
         return parser
