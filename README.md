@@ -28,27 +28,26 @@ Use first "organize_folder_structure.py" to create organize the data in the foll
 
 	.
 	├── Data_folder                   
-	|   ├── train              
-	|   |   ├── images             # Training data
+	|   ├── images              
+	|   |   ├── train             
 	|   |   |   ├── image1.nii              
 	|   |   |   └── image2.nii                     
-	|   |   └── labels             
-	|   |   |   ├── label1.nii              
-	|   |   |   └── label2.nii              
-	|   ├── val               
-	|   |   ├── images             # Validation data
-	|   |   |   ├── image3.nii              
-	|   |   |   └── image4.nii              
-	|   |   └── labels             
-	|   |   |   ├── label3.nii              
-	|   |   |   └── label4.nii
-	|   ├── test               
-	|   |   ├── images             # Testing data
+	|   |   └── val             
+	|   |   |   ├── image3.nii             
+	|   |   |   └── image4.nii
+	|   |   └── test             
 	|   |   |   ├── image5.nii              
-	|   |   |   └── image6.nii              
-	|   |   └── labels             
+	|   |   |   └── image6.nii
+	|   ├── labels              
+	|   |   ├── train             
+	|   |   |   ├── label1.nii              
+	|   |   |   └── label2.nii                     
+	|   |   └── val             
+	|   |   |   ├── label3.nii             
+	|   |   |   └── label4.nii
+	|   |   └── test             
 	|   |   |   ├── label5.nii              
-	|   |   |   └── label6.nii  
+	|   |   |   └── label6.nii
 *******************************************************************************
 ### Training:
 Modify the "init.py" to set the parameters and start the training/testing on the data.
