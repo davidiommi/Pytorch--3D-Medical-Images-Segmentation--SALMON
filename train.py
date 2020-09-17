@@ -12,7 +12,7 @@
 
 from init import Options
 from networks import *
-from networks import build_net
+# from networks import build_net
 import logging
 import os
 import sys
