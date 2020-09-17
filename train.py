@@ -12,6 +12,7 @@
 
 from init import Options
 from networks import *
+from networks import build_net
 import logging
 import os
 import sys
@@ -189,8 +190,10 @@ def main():
         net.load_state_dict(torch.load(opt.preload))
 
     dice_metric = DiceMetric(include_background=True, to_onehot_y=False, sigmoid=True, reduction="mean")
+
     # loss_function = monai.losses.DiceLoss(sigmoid=True)
     loss_function = monai.losses.TverskyLoss(sigmoid=True, alpha=0.3, beta=0.7)
+
     optim = torch.optim.Adam(net.parameters(), lr=opt.lr)
     net_scheduler = get_scheduler(optim, opt)
 

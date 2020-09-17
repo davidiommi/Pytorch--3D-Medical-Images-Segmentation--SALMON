@@ -12,12 +12,13 @@ from collections import OrderedDict
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--image", type=str, default='./Data_folder/images/train/image10.nii')
-parser.add_argument("--label", type=str, default='./Data_folder/labels/train/label10.nii')
-parser.add_argument("--result", type=str, default='./result.nii', help='path to the .nii result to save')
+parser.add_argument("--image", type=str, default='./Data_folder/images/train/image13.nii')
+parser.add_argument("--label", type=str, default='./Data_folder/labels/train/label13.nii')
+parser.add_argument("--result", type=str, default='./Data_folder/results/train/13.nii', help='path to the .nii result to save')
 parser.add_argument("--weights", type=str, default='./best_metric_model.pth', help='network weights to load')
 parser.add_argument("--resolution", default=None, help='New resolution')
 parser.add_argument("--patch_size", type=int, nargs=3, default=(192, 192, 160), help="Input dimension for the generator")
+parser.add_argument('--gpu_ids', type=str, default='3', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
 args = parser.parse_args()
 
 
@@ -149,7 +150,7 @@ def segment(image, label, result, weights, resolution, patch_size):
 
     # try to use all the available GPUs
     devices = get_devices_spec(None)
-    os.environ['CUDA_VISIBLE_DEVICES'] = opt.gpu_ids  # Multi-gpu selector for training
+    os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu_ids  # Multi-gpu selector for training
 
     if len(devices) > 1:
 
@@ -237,9 +238,6 @@ def segment(image, label, result, weights, resolution, patch_size):
 
 
 if __name__ == "__main__":
-
-    from init import Options
-    opt = Options().parse()
 
     segment(args.image, args.label, args.result, args.weights, args.resolution, args.patch_size)
 
