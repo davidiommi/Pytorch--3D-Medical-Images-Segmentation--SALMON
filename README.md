@@ -46,7 +46,7 @@ Folder Structure:
 2.Modify the init.py to set the parameters and start the training/testing on the data.
 Afterwards launch the train.py for training. Tensorboard is available to monitor the training:	
 
-![training](images/salmon3.JPG)![training2](images/salmon4.JPG)![training2](images/salmon5.JPG)
+![training](images/salmon3.JPG)![training2](images/salmon4.JPG)![training3](images/salmon5.JPG)![training2´4](images/salmon6.JPG)
 
 Sample images: on the left side the image, in the middle the result of the segmentation and on the right side the true label
 ![Image](images/image.gif)![result](images/result.gif)![label](images/label.gif)
