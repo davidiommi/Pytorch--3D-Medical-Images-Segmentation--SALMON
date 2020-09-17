@@ -1,6 +1,6 @@
 ![Salmon-logo-1](images/salmon.JPG)
 # SALMON: Segmentation deep learning ALgorithm based on MONai toolbox
-SALMON is a computational toolbox for segmentation using neural networks.
+SALMON is a computational toolbox for segmentation using neural networks (3D patches-based segmentation)
 SALMON is based on MONAI: a PyTorch-based, open-source framework for deep learning in healthcare imaging. (https://github.com/Project-MONAI/MONAI)
 *******************************************************************************
 ## Requirements
