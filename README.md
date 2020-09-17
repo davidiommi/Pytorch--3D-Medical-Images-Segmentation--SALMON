@@ -4,7 +4,8 @@ SALMON is a computational toolbox for segmentation using neural networks.
 SALMON is based on MONAI: a PyTorch-based, open-source framework for deep learning in healthcare imaging. (https://github.com/Project-MONAI/MONAI)
 *******************************************************************************
 ## Requirements
-See requirements.txt list
+See requirements.txt list. We use nvcr.io/nvidia/pytorch:19.03-py3 docker and we install all the requirements with:
+pip install -r requirements.txt
 *******************************************************************************
 ## Python scripts and their function
 
@@ -14,7 +15,7 @@ See requirements.txt list
 
 - check_loader_patches: Shows example of patches fed to the network during the training  
 
-- networks.py: the architectures available for segmentation.
+- networks.py: The architectures available for segmentation.
 
 - train.py: Runs the training
 
@@ -29,19 +30,26 @@ Folder Structure:
 	.
 	├── Data_folder                   
 	|   ├── train              
-	|   |   ├── images             # Training
+	|   |   ├── images             # Training data
 	|   |   |   ├── image1.nii              
 	|   |   |   └── image2.nii                     
 	|   |   └── labels             
 	|   |   |   ├── label1.nii              
 	|   |   |   └── label2.nii              
 	|   ├── val               
-	|   |   ├── images             # Validation
+	|   |   ├── images             # Validation data
 	|   |   |   ├── image3.nii              
 	|   |   |   └── image4.nii              
 	|   |   └── labels             
 	|   |   |   ├── label3.nii              
-	|   |   |   └── label4.nii              
+	|   |   |   └── label4.nii
+	|   ├── test               
+	|   |   ├── images             # Testing data
+	|   |   |   ├── image5.nii              
+	|   |   |   └── image6.nii              
+	|   |   └── labels             
+	|   |   |   ├── label5.nii              
+	|   |   |   └── label6.nii  
 *******************************************************************************
 2.Modify the init.py to set the parameters and start the training/testing on the data.
 Afterwards launch the train.py for training. Tensorboard is available to monitor the training:	
@@ -49,13 +57,15 @@ Afterwards launch the train.py for training. Tensorboard is available to monitor
 ![training](images/salmon3.JPG)![training2](images/salmon4.JPG)![training3](images/salmon5.JPG)![training2´4](images/salmon6.JPG)
 
 Sample images: on the left side the image, in the middle the result of the segmentation and on the right side the true label
+The following images show the segmentation of carotid artery from MR sequence
+
 ![Image](images/image.gif)![result](images/result.gif)![label](images/label.gif)
 *******************************************************************************
-3.Launch predict_single_image.py to test the network. Modify the parameters in the parse section to select the weights and images to infer.
+3.Launch predict_single_image.py to test the network. Modify the parameters in the parse section to select the path of the weights, images to infer and result. 
 
 ### Sample script inference
 ```console
-C:\Users\David\Desktop\3D GAN>python predict_single_image.py --image C:\Users\David\Desktop\test_image.nii --result C:\Users\David\Desktop\result.nii --gen_weights C:\Users\David\Desktop\weights.h5
+python predict_single_image.py --image './Data_folder/images/train/image13.nii' --label './Data_folder/labels/train/label13.nii' --result './Data_folder/results/train/prova.nii'
 ```
 *******************************************************************************
 ### To Do
