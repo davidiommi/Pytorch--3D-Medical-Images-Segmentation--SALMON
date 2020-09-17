@@ -71,7 +71,7 @@ Use and modify "networks.py" to modify the network and check the number of param
 
 ### Sample script inference
 ```console
-python predict_single_image.py --image './Data_folder/images/train/image13.nii' --label './Data_folder/labels/train/label13.nii' --result './Data_folder/results/train/prova.nii'
+python predict_single_image.py --image './Data_folder/images/train/image13.nii' --label './Data_folder/labels/train/label13.nii' --result './Data_folder/results/train/prova.nii' --weights './best_metric_model.pth'
 ```
 *******************************************************************************
 ### Future Development: TO DO list
