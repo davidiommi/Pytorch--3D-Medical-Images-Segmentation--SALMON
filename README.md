@@ -22,7 +22,7 @@ See requirements.txt list. We use "nvcr.io/nvidia/pytorch:19.03-py3" docker and 
 - predict_single_image.py: It launches the inference on a single input image chosen by the user.
 *******************************************************************************
 ## Usage
-Folders structure:
+### Folders structure:
 Use first "organize_folder_structure.py" to create organize the data in the following folder structure:
 
 
@@ -50,7 +50,7 @@ Use first "organize_folder_structure.py" to create organize the data in the foll
 	|   |   |   ├── label5.nii              
 	|   |   |   └── label6.nii  
 *******************************************************************************
-Training:
+### Training:
 Modify the "init.py" to set the parameters and start the training/testing on the data.
 Afterwards launch the train.py for training. Tensorboard is available to monitor the training:	
 
@@ -61,12 +61,12 @@ The following images show the segmentation of carotid artery from MR sequence
 
 ![Image](images/image.gif)![result](images/result.gif)![label](images/label.gif)
 *******************************************************************************
-Inference:
+### Inference:
 Launch "predict_single_image.py" to test the network. Modify the parameters in the parse section to select the path of the weights, images to infer and result. 
 *******************************************************************************
-Tips:
+### Tips:
 Use and modify "check_loader_patches.py" to check the patches fed during training. 
-Use and modify "networkds.py" to modify the network and check the number of parameters. 
+Use and modify "networks.py" to modify the network and check the number of parameters. 
 
 
 ### Sample script inference
