@@ -42,13 +42,15 @@ Folder Structure:
 	|   |   └── labels             
 	|   |   |   ├── label3.nii              
 	|   |   |   └── label4.nii              
-   
-
+*******************************************************************************
 2.Modify the init.py to set the parameters and start the training/testing on the data.
 Afterwards launch the train.py for training. Tensorboard is available to monitor the training:	
-![training](images/salmon3.JPG)
-![training2](images/salmon4.JPG)
 
+![training](images/salmon3.JPG)![training2](images/salmon4.JPG)![training2](images/salmon5.JPG)
+
+Sample images: on the left side the image, in the middle the result of the segmentation and on the right side the true label
+![Image](images/image.gif)![result](images/result.gif)![label](images/label.gif)
+*******************************************************************************
 3.Launch predict_single_image.py to test the network. Modify the parameters in the parse section to select the weights and images to infer.
 
 ### Sample script inference
