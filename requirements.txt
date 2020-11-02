@@ -27,4 +27,4 @@ torchvision
 monai
 simpleITK
 torchsummaryX
-'monai[all]'
+monai[all]
