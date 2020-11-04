@@ -25,5 +25,6 @@ mypy
 ninja
 torchvision
 monai
-simpleITK
+simpleITK==1.2.4
 torchsummaryX
+monai[all]
