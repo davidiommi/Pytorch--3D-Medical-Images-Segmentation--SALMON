@@ -1,10 +1,9 @@
-![Salmon-logo-1](images/salmon.JPG)
 # SALMON: Segmentation of Thoracic aorta from CT
 
 No aortic arc is available. Example images:
 Left: CT | Center: segmentation result | Right: Original label
 
-![Image](images/1.gif)![result](images/2.gif)![label](images/3.gif)
+![Image](1.gif)![result](2.gif)![label](3.gif)
 *******************************************************************************
 ## Requirements
 See requirements.txt list. We use "nvcr.io/nvidia/pytorch:19.03-py3" docker and we install all the requirements with:
