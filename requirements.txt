@@ -20,11 +20,11 @@ pycodestyle
 pyflakes
 black
 isort
-pytype>=2020.6.1
+pytype==2020.6.1
 mypy
 ninja
 torchvision
-monai
+monai==0.3.0rc4
 simpleITK==1.2.4
 torchsummaryX
 monai[all]
