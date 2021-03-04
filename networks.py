@@ -39,7 +39,8 @@ def init_weights(net, init_type='normal', init_gain=0.02):
 def get_scheduler(optimizer, opt):
     if opt.lr_policy == 'lambda':
         def lambda_rule(epoch):
-            lr_l = 1.0 - max(0, epoch + 1 - opt.epochs/2) / float(opt.epochs/2 + 1)
+            # lr_l = 1.0 - max(0, epoch + 1 - opt.epochs/2) / float(opt.epochs/2 + 1)
+            lr_l = (1 - epoch / opt.epochs) ** 0.9
             return lr_l
         scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda_rule)
     elif opt.lr_policy == 'step':
@@ -67,182 +68,63 @@ import torch
 
 
 def build_net():
+
     from init import Options
     opt = Options().parse()
     from monai.networks.layers import Norm
     from monai.networks.layers.factories import split_args
     act_type, args = split_args("RELU")
 
-    # create Unet
-    Unet = monai.networks.nets.UNet(
-        dimensions=3,
-        in_channels=opt.in_channels,
-        out_channels=opt.out_channels,
-        channels=(64, 128, 256, 512, 1024),
-        strides=(2, 2, 2, 2),
-        act=act_type,
-        num_res_units=3,
-        dropout=0.2,
-        norm=Norm.BATCH,
+    # # create Unet
+    # Unet = monai.networks.nets.UNet(
+    #     dimensions=3,
+    #     in_channels=opt.in_channels,
+    #     out_channels=opt.out_channels,
+    #     channels=(64, 128, 256, 512, 1024),
+    #     strides=(2, 2, 2, 2),
+    #     act=act_type,
+    #     num_res_units=3,
+    #     dropout=0.2,
+    #     norm=Norm.BATCH,
+    #
+    # )
 
-    )
+    # create nn-Unet
+    if opt.resolution is None:
+        sizes, spacings = opt.patch_size, opt.spacing
+    else:
+        sizes, spacings = opt.patch_size, opt.resolution
 
-    class UNet_David(Module):
-        # __                            __
-        #  1|__   ________________   __|1
-        #     2|__  ____________  __|2
-        #        3|__  ______  __|3
-        #           4|__ __ __|4
-        # The convolution operations on either side are residual subject to 1*1 Convolution for channel homogeneity
+    strides, kernels = [], []
 
-        def __init__(self, feat_channels=[32, 64, 128, 256, 512], residual='conv'):
-            # residual: conv for residual input x through 1*1 conv across every layer for downsampling, None for removal of residuals
+    while True:
+        spacing_ratio = [sp / min(spacings) for sp in spacings]
+        stride = [2 if ratio <= 2 and size >= 8 else 1 for (ratio, size) in zip(spacing_ratio, sizes)]
+        kernel = [3 if ratio <= 2 else 1 for ratio in spacing_ratio]
+        if all(s == 1 for s in stride):
+            break
+        sizes = [i / j for i, j in zip(sizes, stride)]
+        spacings = [i * j for i, j in zip(spacings, stride)]
+        kernels.append(kernel)
+        strides.append(stride)
+    strides.insert(0, len(spacings) * [1])
+    kernels.append(len(spacings) * [3])
 
-            super(UNet_David, self).__init__()
-
-            class Conv3D_Block(Module):
-
-                def __init__(self, inp_feat, out_feat, kernel=3, stride=1, padding=1, residual=None):
-
-                    super(Conv3D_Block, self).__init__()
-
-                    self.conv1 = Sequential(
-                        Conv3d(inp_feat, out_feat, kernel_size=kernel,
-                               stride=stride, padding=padding, bias=True),
-                        BatchNorm3d(out_feat),
-                        ReLU())
-
-                    self.conv2 = Sequential(
-                        Conv3d(out_feat, out_feat, kernel_size=kernel,
-                               stride=stride, padding=padding, bias=True),
-                        BatchNorm3d(out_feat),
-                        ReLU())
-
-                    self.residual = residual
-
-                    if self.residual is not None:
-                        self.residual_upsampler = Conv3d(inp_feat, out_feat, kernel_size=1, bias=False)
-
-                def forward(self, x):
-
-                    res = x
-
-                    if not self.residual:
-                        return self.conv2(self.conv1(x))
-                    else:
-                        return self.conv2(self.conv1(x)) + self.residual_upsampler(res)
-
-            class Deconv3D_Block(Module):
-
-                def __init__(self, inp_feat, out_feat, kernel=3, stride=2, padding=1):
-                    super(Deconv3D_Block, self).__init__()
-
-                    self.deconv = Sequential(
-                        ConvTranspose3d(inp_feat, out_feat, kernel_size=(kernel, kernel, kernel),
-                                        stride=(stride, stride, stride), padding=(padding, padding, padding),
-                                        output_padding=1, bias=True),
-                        ReLU())
-
-                def forward(self, x):
-                    return self.deconv(x)
-
-            class ChannelPool3d(AvgPool1d):
-
-                def __init__(self, kernel_size, stride, padding):
-                    super(ChannelPool3d, self).__init__(kernel_size, stride, padding)
-                    self.pool_1d = AvgPool1d(self.kernel_size, self.stride, self.padding, self.ceil_mode)
-
-                def forward(self, inp):
-                    n, c, d, w, h = inp.size()
-                    inp = inp.view(n, c, d * w * h).permute(0, 2, 1)
-                    pooled = self.pool_1d(inp)
-                    c = int(c / self.kernel_size[0])
-                    return inp.view(n, c, d, w, h)
-
-            # Encoder downsamplers
-            self.pool1 = MaxPool3d((2, 2, 2))
-            self.pool2 = MaxPool3d((2, 2, 2))
-            self.pool3 = MaxPool3d((2, 2, 2))
-            self.pool4 = MaxPool3d((2, 2, 2))
-
-            # Encoder convolutions
-            self.conv_blk1 = Conv3D_Block(opt.in_channels, feat_channels[0], residual=residual)
-            self.conv_blk2 = Conv3D_Block(feat_channels[0], feat_channels[1], residual=residual)
-            self.conv_blk3 = Conv3D_Block(feat_channels[1], feat_channels[2], residual=residual)
-            self.conv_blk4 = Conv3D_Block(feat_channels[2], feat_channels[3], residual=residual)
-            self.conv_blk5 = Conv3D_Block(feat_channels[3], feat_channels[4], residual=residual)
-
-            # Decoder convolutions
-            self.dec_conv_blk4 = Conv3D_Block(2 * feat_channels[3], feat_channels[3], residual=residual)
-            self.dec_conv_blk3 = Conv3D_Block(2 * feat_channels[2], feat_channels[2], residual=residual)
-            self.dec_conv_blk2 = Conv3D_Block(2 * feat_channels[1], feat_channels[1], residual=residual)
-            self.dec_conv_blk1 = Conv3D_Block(2 * feat_channels[0], feat_channels[0], residual=residual)
-
-            # Decoder upsamplers
-            self.deconv_blk4 = Deconv3D_Block(feat_channels[4], feat_channels[3])
-            self.deconv_blk3 = Deconv3D_Block(feat_channels[3], feat_channels[2])
-            self.deconv_blk2 = Deconv3D_Block(feat_channels[2], feat_channels[1])
-            self.deconv_blk1 = Deconv3D_Block(feat_channels[1], feat_channels[0])
-
-            # Final 1*1 Conv Segmentation map
-            self.one_conv = Conv3d(feat_channels[0], opt.out_channels, kernel_size=1, stride=1, padding=0, bias=True)
-
-        def forward(self, x):
-            # Encoder part
-
-            x1 = self.conv_blk1(x)
-
-            x_low1 = self.pool1(x1)
-            x2 = self.conv_blk2(x_low1)
-
-            x_low2 = self.pool2(x2)
-            x3 = self.conv_blk3(x_low2)
-
-            x_low3 = self.pool3(x3)
-            x4 = self.conv_blk4(x_low3)
-
-            x_low4 = self.pool4(x4)
-            base = self.conv_blk5(x_low4)
-
-            # Decoder part
-
-            d4 = torch.cat([self.deconv_blk4(base), x4], dim=1)
-            d_high4 = self.dec_conv_blk4(d4)
-
-            d3 = torch.cat([self.deconv_blk3(d_high4), x3], dim=1)
-            d_high3 = self.dec_conv_blk3(d3)
-            d_high3 = Dropout3d(p=0.5)(d_high3)
-
-            d2 = torch.cat([self.deconv_blk2(d_high3), x2], dim=1)
-            d_high2 = self.dec_conv_blk2(d2)
-            d_high2 = Dropout3d(p=0.5)(d_high2)
-
-            d1 = torch.cat([self.deconv_blk1(d_high2), x1], dim=1)
-            d_high1 = self.dec_conv_blk1(d1)
-
-            seg = self.one_conv(d_high1)
-
-            return seg
-
-    # create HighResNet
-    HighResNet = monai.networks.nets.HighResNet(
+    nn_Unet = monai.networks.nets.DynUNet(
         spatial_dims=3,
         in_channels=opt.in_channels,
         out_channels=opt.out_channels,
+        kernel_size=kernels,
+        strides=strides,
+        upsample_kernel_size=strides[1:],
+        res_block=True,
+        # act=act_type,
+        # norm=Norm.BATCH,
     )
 
-    if opt.net == 'Unet_Monai':
-        network = Unet
-    elif opt.net == 'HighResNet':
-        network = HighResNet
-    elif opt.net == 'Unet_David':
-        network = UNet_David(residual='pool')
-    else:
-        raise NotImplementedError
+    init_weights(nn_Unet, init_type='normal')
 
-    init_weights(network, init_type='normal')
-
-    return network
+    return nn_Unet
 
 
 if __name__ == '__main__':

@@ -21,7 +21,7 @@ from torch.utils.data import DataLoader
 from init import Options
 import monai
 from monai.data import ArrayDataset, GridPatchDataset, create_test_image_3d
-from monai.transforms import (Compose, LoadNiftid, AddChanneld, Transpose,
+from monai.transforms import (Compose, LoadImaged, AddChanneld, Transpose,
                               ScaleIntensityd, ToTensord, RandSpatialCropd, Rand3DElasticd, RandAffined,
     Spacingd, Orientationd, RandZoomd, RandShiftIntensityd, RandGaussianNoised, BorderPadd,RandAdjustContrastd, NormalizeIntensityd,RandFlipd, ScaleIntensityRanged)
 
@@ -73,7 +73,7 @@ if __name__ == "__main__":
 
     monai_transforms = [
 
-        LoadNiftid(keys=['image', 'label']),
+        LoadImaged(keys=['image', 'label']),
         AddChanneld(keys=['image', 'label']),
         NormalizeIntensityd(keys=['image']),
         ScaleIntensityd(keys=['image']),

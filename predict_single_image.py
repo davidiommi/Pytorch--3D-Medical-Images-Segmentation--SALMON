@@ -13,12 +13,12 @@ from collections import OrderedDict
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--image", type=str, default='./Data_folder/images/train/image13.nii')
-parser.add_argument("--label", type=str, default='./Data_folder/labels/train/label13.nii')
-parser.add_argument("--result", type=str, default='./Data_folder/results/train/13.nii', help='path to the .nii result to save')
+parser.add_argument("--label", type=str, default=None)
+parser.add_argument("--result", type=str, default='./Data_folder/13.nii', help='path to the .nii result to save')
 parser.add_argument("--weights", type=str, default='./best_metric_model.pth', help='network weights to load')
 parser.add_argument("--resolution", default=None, help='New resolution')
 parser.add_argument("--patch_size", type=int, nargs=3, default=(192, 192, 160), help="Input dimension for the generator")
-parser.add_argument('--gpu_ids', type=str, default='3', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
+parser.add_argument('--gpu_ids', type=str, default='2,3', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
 args = parser.parse_args()
 
 
@@ -107,7 +107,7 @@ def segment(image, label, result, weights, resolution, patch_size):
     if label is not None:
         if resolution is not None:
             val_transforms = Compose([
-                LoadNiftid(keys=['image', 'label']),
+                LoadImaged(keys=['image', 'label']),
                 AddChanneld(keys=['image', 'label']),
                 NormalizeIntensityd(keys=['image']),
                 ScaleIntensityd(keys=['image']),
@@ -116,7 +116,7 @@ def segment(image, label, result, weights, resolution, patch_size):
             ])
         else:
             val_transforms = Compose([
-                LoadNiftid(keys=['image', 'label']),
+                LoadImaged(keys=['image', 'label']),
                 AddChanneld(keys=['image', 'label']),
                 NormalizeIntensityd(keys=['image']),
                 ScaleIntensityd(keys=['image']),
@@ -126,7 +126,7 @@ def segment(image, label, result, weights, resolution, patch_size):
     else:
         if resolution is not None:
             val_transforms = Compose([
-                LoadNiftid(keys=['image']),
+                LoadImaged(keys=['image']),
                 AddChanneld(keys=['image']),
                 NormalizeIntensityd(keys=['image']),
                 ScaleIntensityd(keys=['image']),
@@ -135,7 +135,7 @@ def segment(image, label, result, weights, resolution, patch_size):
             ])
         else:
             val_transforms = Compose([
-                LoadNiftid(keys=['image']),
+                LoadImaged(keys=['image']),
                 AddChanneld(keys=['image']),
                 NormalizeIntensityd(keys=['image']),
                 ScaleIntensityd(keys=['image']),
@@ -146,19 +146,24 @@ def segment(image, label, result, weights, resolution, patch_size):
     val_loader = DataLoader(
         val_ds, batch_size=1, num_workers=4, collate_fn=list_data_collate, pin_memory=torch.cuda.is_available())
 
-    dice_metric = DiceMetric(include_background=True, to_onehot_y=False, sigmoid=True, reduction="mean")
+    dice_metric = DiceMetric(include_background=True, reduction="mean")
+    post_trans = Compose([Activations(sigmoid=True), AsDiscrete(threshold_values=True)])
 
     # try to use all the available GPUs
-    devices = get_devices_spec(None)
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu_ids  # Multi-gpu selector for training
 
-    if len(devices) > 1:
+    if args.gpu_ids != '-1':
+        num_gpus = len(args.gpu_ids.split(','))
+    else:
+        num_gpus = 0
+    print('number of GPU:', num_gpus)
+
+    if num_gpus > 1:
 
         # build the network
-        net = build_net()
-        net = net.to(devices[0])
+        net = build_net().cuda()
 
-        net = torch.nn.DataParallel(net, device_ids=devices)
+        net = torch.nn.DataParallel(net)
         net.load_state_dict(torch.load(weights))
 
     else:
@@ -178,7 +183,8 @@ def segment(image, label, result, weights, resolution, patch_size):
                 val_images = val_data["image"].cuda()
                 # define sliding window size and batch size for windows inference
                 val_outputs = sliding_window_inference(val_images, roi_size, sw_batch_size, net)
-                val_outputs = (val_outputs.sigmoid() >= 0.5).float()
+                val_outputs = post_trans(val_outputs)
+                # val_outputs = (val_outputs.sigmoid() >= 0.5).float()
 
         else:
             metric_sum = 0.0
@@ -187,10 +193,11 @@ def segment(image, label, result, weights, resolution, patch_size):
                 val_images, val_labels = val_data["image"].cuda(), val_data["label"].cuda()
                 # define sliding window size and batch size for windows inference
                 val_outputs = sliding_window_inference(val_images, roi_size, sw_batch_size, net)
-                value = dice_metric(y_pred=val_outputs, y=val_labels)
+                val_outputs = post_trans(val_outputs)
+                value, _ = dice_metric(y_pred=val_outputs, y=val_labels)
                 metric_count += len(value)
                 metric_sum += value.item() * len(value)
-                val_outputs = (val_outputs.sigmoid() >= 0.5).float()
+                # val_outputs = (val_outputs.sigmoid() >= 0.5).float()
 
             metric = metric_sum / metric_count
             print("Evaluation Metric (Dice):", metric)

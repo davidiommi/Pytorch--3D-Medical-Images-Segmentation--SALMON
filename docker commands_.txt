@@ -1,0 +1,13 @@
+
+
+2)
+docker run --gpus all --rm --name monai_david -v /ceph/zmpbmt.meduniwien.ac.at/p_OENB2018/Codes/:/data/tensorflow/ -ti --ipc=host projectmonai/monai:latest
+
+
+3) cd /data/tensorflow/Segmentation_deep_learning/POODLE_FET
+  
+  
+4) pip install -r requirements.txt
+
+  docker stop 
+  

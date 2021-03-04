@@ -29,12 +29,12 @@ import monai
 from monai.data import create_test_image_3d, list_data_collate
 from monai.inferers import sliding_window_inference
 from monai.metrics import DiceMetric
-from monai.transforms import (Compose, LoadNiftid, AddChanneld, Transpose,
+from monai.transforms import (Compose, LoadImaged, AddChanneld, Transpose,Activations,AsDiscrete,
                               ScaleIntensityd, ToTensord, RandSpatialCropd, Rand3DElasticd, RandAffined,
     Spacingd, Orientationd, RandShiftIntensityd, BorderPadd, RandGaussianNoised, RandAdjustContrastd,NormalizeIntensityd,RandFlipd)
 
 from monai.visualize import plot_2d_or_3d_image
-from monai.engines import get_devices_spec
+# from monai.engines import get_devices_spec
 
 def main():
     opt = Options().parse()
@@ -90,10 +90,12 @@ def main():
                  for image_name, label_name in zip(test_images, test_segs)]
 
     # Transforms list
+    # Need to concatenate multiple channels here if you want multichannel segmentation
+    # Check other examples on Monai webpage.
 
     if opt.resolution is not None:
         train_transforms = [
-            LoadNiftid(keys=['image', 'label']),
+            LoadImaged(keys=['image', 'label']),
             AddChanneld(keys=['image', 'label']),
             NormalizeIntensityd(keys=['image']),
             ScaleIntensityd(keys=['image']),
@@ -118,7 +120,7 @@ def main():
         ]
 
         val_transforms = [
-            LoadNiftid(keys=['image', 'label']),
+            LoadImaged(keys=['image', 'label']),
             AddChanneld(keys=['image', 'label']),
             NormalizeIntensityd(keys=['image']),
             ScaleIntensityd(keys=['image']),
@@ -127,7 +129,7 @@ def main():
         ]
     else:
         train_transforms = [
-            LoadNiftid(keys=['image', 'label']),
+            LoadImaged(keys=['image', 'label']),
             AddChanneld(keys=['image', 'label']),
             NormalizeIntensityd(keys=['image']),
             ScaleIntensityd(keys=['image']),
@@ -150,7 +152,7 @@ def main():
         ]
 
         val_transforms = [
-            LoadNiftid(keys=['image', 'label']),
+            LoadImaged(keys=['image', 'label']),
             AddChanneld(keys=['image', 'label']),
             NormalizeIntensityd(keys=['image']),
             ScaleIntensityd(keys=['image']),
@@ -176,8 +178,8 @@ def main():
     check_val = monai.data.Dataset(data=test_dicts, transform=val_transforms)
     test_loader = DataLoader(check_val, batch_size=1, num_workers=opt.workers, pin_memory=torch.cuda.is_available())
 
-    # try to use all the available GPUs
-    devices = get_devices_spec(None)
+    # # try to use all the available GPUs
+    # devices = get_devices_spec(None)
 
     # build the network
     net = build_net()
@@ -189,10 +191,12 @@ def main():
     if opt.preload is not None:
         net.load_state_dict(torch.load(opt.preload))
 
-    dice_metric = DiceMetric(include_background=True, to_onehot_y=False, sigmoid=True, reduction="mean")
+    dice_metric = DiceMetric(include_background=True, reduction="mean")
+    post_trans = Compose([Activations(sigmoid=True), AsDiscrete(threshold_values=True)])
 
     # loss_function = monai.losses.DiceLoss(sigmoid=True)
-    loss_function = monai.losses.TverskyLoss(sigmoid=True, alpha=0.3, beta=0.7)
+    # loss_function = monai.losses.TverskyLoss(sigmoid=True, alpha=0.3, beta=0.7)
+    loss_function = monai.losses.DiceCELoss(sigmoid=True)
 
     optim = torch.optim.Adam(net.parameters(), lr=opt.lr)
     net_scheduler = get_scheduler(optim, opt)
@@ -243,7 +247,8 @@ def main():
                         roi_size = opt.patch_size
                         sw_batch_size = 4
                         val_outputs = sliding_window_inference(val_images, roi_size, sw_batch_size, net)
-                        value = dice_metric(y_pred=val_outputs, y=val_labels)
+                        val_outputs = post_trans(val_outputs)
+                        value, _ = dice_metric(y_pred=val_outputs, y=val_labels)
                         metric_count += len(value)
                         metric_sum += value.item() * len(value)
                     metric = metric_sum / metric_count
