@@ -28,10 +28,7 @@ class Options():
 
         # training parameters
         parser.add_argument('--epochs', default=200, help='Number of epochs')
-        parser.add_argument('--lr', default=0.001, help='Learning rate')
-        parser.add_argument('--weight_decay', default=1e-4, help='patience')
-        parser.add_argument('--lr_policy', type=str, default='lambda', help='lr rate: lambda|step|plateau|cosine')
-        parser.add_argument('--lr_decay_iters', type=int, default=50, help='multiply by a gamma every lr_decay_iters')
+        parser.add_argument('--lr', default=0.01, help='Learning rate')
 
         # Inference
         # This is just a trick to make the predict script working
