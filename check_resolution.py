@@ -1,10 +1,18 @@
-import os
-import re
+# from NiftiDataset import *
 import argparse
 import SimpleITK as sitk
+import re
 import numpy as np
-import random
+import os
 
+'''Check if the images and the labels have different size after resampling (or not) them to the same resolution'''
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--images', default='./Data_folder/CT', help='path to the images')
+parser.add_argument('--labels', default='./Data_folder/CT_label', help='path to the labels')
+parser.add_argument("--resample", action='store_true', default=True, help='Decide or not to resample the images to a new resolution')
+parser.add_argument("--new_resolution", type=float, default=((1.3671875, 1.3671875, 3.0)), help='New resolution')
+args = parser.parse_args()
 
 def resize(img, new_size, interpolator):
     # img = sitk.ReadImage(img)
@@ -137,6 +145,7 @@ def resample_sitk_image(sitk_image, spacing=None, interpolator=None, fill_value=
     return resampled_sitk_image
 
 
+
 def numericalSort(value):
     numbers = re.compile(r'(\d+)')
     parts = numbers.split(value)
@@ -160,117 +169,92 @@ def lstFiles(Path):
 
     return images_list
 
+list_images = lstFiles(args.images)
+list_labels = lstFiles(args.labels)
 
-def uniform_img_dimensions(image, label):
+for i in range(len(list_images)):
 
-    image_array = sitk.GetArrayFromImage(image)
-    image_array = np.transpose(image_array, axes=(2, 1, 0))  # reshape array from itk z,y,x  to  x,y,z
-    image_shape = image_array.shape
+    a = sitk.ReadImage(list_images[i])
+    if args.resample is True:
+        a = resample_sitk_image(a, spacing=args.new_resolution, interpolator='linear')
+    spacing1 = a.GetSpacing()
+    a = sitk.GetArrayFromImage(a)
+    a = np.transpose(a, axes=(2, 1, 0))  # reshape array from itk z,y,x  to  x,y,z
+    a1 = a.shape
 
-    label = resample_sitk_image(label, spacing=image.GetSpacing(), interpolator='nearest')
-    res = resize(label,image_shape,sitk.sitkNearestNeighbor)
-    res = (np.rint(sitk.GetArrayFromImage(res)))
-    res = sitk.GetImageFromArray(res.astype('uint8'))
-    res.SetDirection(image.GetDirection())
-    res.SetOrigin(image.GetOrigin())
-    res.SetSpacing(image.GetSpacing())
-    print(res.GetSize())
+    b = sitk.ReadImage(list_labels[i])
+    if args.resample is True:
+        b = resample_sitk_image(b, spacing=args.new_resolution, interpolator='nearest')
 
-    return image, res
+    b = resize(b,a1,sitk.sitkNearestNeighbor)
+    spacing2 = b.GetSpacing()
+    b = sitk.GetArrayFromImage(b)
+    b = np.transpose(b, axes=(2, 1, 0))  # reshape array from itk z,y,x  to  x,y,z
+    b1 = b.shape
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--images', default='./Data_folder/CT', help='path to the images')
-parser.add_argument('--labels', default='./Data_folder/CT_label', help='path to the labels')
-parser.add_argument('--split_val', default=7, help='number of images for validation')
-parser.add_argument('--split_test', default=3, help='number of images for testing')
-args = parser.parse_args()
+    print(list_images[i], a1)
 
-if __name__ == "__main__":
+    if a1 != b1:
+        print('Mismatch of size in ', list_images[i])
 
-    list_images = lstFiles(args.images)
-    list_labels = lstFiles(args.labels)
 
-    mapIndexPosition = list(zip(list_images, list_labels))  # shuffle order list
-    random.shuffle(mapIndexPosition)
-    list_images, list_labels = zip(*mapIndexPosition)
 
-    os.mkdir('./Data_folder/images')
-    os.mkdir('./Data_folder/labels')
 
-    # 1
-    if not os.path.isdir('./Data_folder/images/train'):
-        os.mkdir('./Data_folder/images/train/')
-    # 2
-    if not os.path.isdir('./Data_folder/images/val'):
-        os.mkdir('./Data_folder/images/val')
 
-    # 3
-    if not os.path.isdir('./Data_folder/images/test'):
-        os.mkdir('./Data_folder/images/test')
 
-    # 4
-    if not os.path.isdir('./Data_folder/labels/train'):
-        os.mkdir('./Data_folder/labels/train')
 
-    # 5
-    if not os.path.isdir('./Data_folder/labels/val'):
-        os.mkdir('./Data_folder/labels/val')
 
-    # 6
-    if not os.path.isdir('./Data_folder/labels/test'):
-        os.mkdir('./Data_folder/labels/test')
 
-    for i in range(len(list_images)-int(args.split_test + args.split_val)):
 
-        a = list_images[int(args.split_test + args.split_val)+i]
-        b = list_labels[int(args.split_test + args.split_val)+i]
 
-        print(a)
 
-        label = sitk.ReadImage(b)
-        image = sitk.ReadImage(a)
 
-        image, label = uniform_img_dimensions(image, label)
 
-        image_directory = os.path.join('./Data_folder/images/train', f"image{i:d}.nii")
-        label_directory = os.path.join('./Data_folder/labels/train', f"label{i:d}.nii")
 
-        sitk.WriteImage(image, image_directory)
-        sitk.WriteImage(label, label_directory)
 
-    for i in range(int(args.split_val)):
 
-        a = list_images[int(args.split_test)+i]
-        b = list_labels[int(args.split_test)+i]
 
-        print(a)
 
-        label = sitk.ReadImage(b)
-        image = sitk.ReadImage(a)
 
-        image, label = uniform_img_dimensions(image, label)
 
-        image_directory = os.path.join('./Data_folder/images/val', f"image{i:d}.nii")
-        label_directory = os.path.join('./Data_folder/labels/val', f"label{i:d}.nii")
 
-        sitk.WriteImage(image, image_directory)
-        sitk.WriteImage(label, label_directory)
 
-    for i in range(int(args.split_test)):
 
-        a = list_images[i]
-        b = list_labels[i]
 
-        print(a)
 
-        label = sitk.ReadImage(b)
-        image = sitk.ReadImage(a)
 
-        image, label = uniform_img_dimensions(image, label)
 
-        image_directory = os.path.join('./Data_folder/images/test', f"image{i:d}.nii")
-        label_directory = os.path.join('./Data_folder/labels/test', f"label{i:d}.nii")
 
-        sitk.WriteImage(image, image_directory)
-        sitk.WriteImage(label, label_directory)
+
+
+
+
+
+
+
+
+
+
+
+
+
+# a=sitk.ReadImage('aaaaaa.nii')
+# a = sitk.GetArrayFromImage(a)
+# a = np.transpose(a, axes=(2, 1, 0))  # reshape array from itk z,y,x  to  x,y,z
+# result = np.rot90(a, k=-1)
+# fig, ax = plt.subplots(1, 1)
+# tracker = IndexTracker(ax, result)
+# fig.canvas.mpl_connect('scroll_event', tracker.onscroll)
+# plt.show()
+
+# a=sitk.ReadImage(labels[36])
+# a = sitk.GetArrayFromImage(a)
+# a = np.transpose(a, axes=(2, 1, 0))  # reshape array from itk z,y,x  to  x,y,z
+# result = np.rot90(a, k=-1)
+# fig, ax = plt.subplots(1, 1)
+# tracker = IndexTracker(ax, result)
+# fig.canvas.mpl_connect('scroll_event', tracker.onscroll)
+# plt.show()
+
+
 

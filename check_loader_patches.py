@@ -21,9 +21,9 @@ from torch.utils.data import DataLoader
 from init import Options
 import monai
 from monai.data import ArrayDataset, GridPatchDataset, create_test_image_3d
-from monai.transforms import (Compose, LoadImaged, AddChanneld, Transpose,
-                              ScaleIntensityd, ToTensord, RandSpatialCropd, Rand3DElasticd, RandAffined,
-    Spacingd, Orientationd, RandZoomd, RandShiftIntensityd, RandGaussianNoised, BorderPadd,RandAdjustContrastd, NormalizeIntensityd,RandFlipd, ScaleIntensityRanged)
+from monai.transforms import (Compose, LoadImaged, AddChanneld, Transpose, Resized, CropForegroundd, CastToTyped,RandGaussianSmoothd,
+                              ScaleIntensityd, ToTensord, RandSpatialCropd, Rand3DElasticd, RandAffined, SpatialPadd,
+    Spacingd, Orientationd, RandZoomd, ThresholdIntensityd, RandShiftIntensityd, RandGaussianNoised, BorderPadd,RandAdjustContrastd, NormalizeIntensityd,RandFlipd, ScaleIntensityRanged)
 
 
 class IndexTracker(object):
@@ -75,9 +75,19 @@ if __name__ == "__main__":
 
         LoadImaged(keys=['image', 'label']),
         AddChanneld(keys=['image', 'label']),
+        CropForegroundd(keys=['image', 'label'], source_key='image'),
+        # ThresholdIntensityd(keys=['image'],threshold=-350, above=True, cval=-350),
+        # ThresholdIntensityd(keys=['image'], threshold=350, above=False, cval=350),
         NormalizeIntensityd(keys=['image']),
         ScaleIntensityd(keys=['image']),
-        # Spacingd(keys=['image', 'label'], pixdim=opt.resolution, mode=('bilinear', 'nearest')),
+        # RandGaussianSmoothd(
+        #     keys=["image"],
+        #     sigma_x=(0.5, 1.15),
+        #     sigma_y=(0.5, 1.15),
+        #     sigma_z=(0.5, 1.15),
+        #     prob=0.15,
+        # ),
+        Spacingd(keys=['image', 'label'], pixdim=opt.resolution, mode=('bilinear', 'nearest')),
         # RandFlipd(keys=['image', 'label'], prob=1, spatial_axis=2),
         # RandAffined(keys=['image', 'label'], mode=('bilinear', 'nearest'), prob=1,
         #             rotate_range=(np.pi / 36, np.pi / 4, np.pi / 36)),
@@ -86,24 +96,23 @@ if __name__ == "__main__":
         # RandAdjustContrastd(keys=['image'], gamma=(0.5, 3), prob=1),
         # RandGaussianNoised(keys=['image'], prob=1, mean=np.random.uniform(0, 0.5), std=np.random.uniform(0, 1)),
         # RandShiftIntensityd(keys=['image'], offsets=np.random.uniform(0,0.3), prob=1),
-        # BorderPadd(keys=['image', 'label'],spatial_border=(16,16,0)),
-        RandSpatialCropd(keys=['image', 'label'], roi_size=opt.patch_size, random_size=False),
-        # Orientationd(keys=["image", "label"], axcodes="PLI"),
+        SpatialPadd(keys=['image', 'label'], spatial_size=opt.patch_size),
+        # RandSpatialCropd(keys=['image', 'label'], roi_size=opt.patch_size, random_size=False),
+        # Orientationd(keys=["image", "label"], axcodes="PIL"),
         ToTensord(keys=['image', 'label'])
     ]
 
     transform = Compose(monai_transforms)
-
     check_ds = monai.data.Dataset(data=data_dicts, transform=transform)
-
-    loader = DataLoader(check_ds, batch_size=opt.batch_size, shuffle=True, num_workers=2, pin_memory=torch.cuda.is_available())
+    loader = DataLoader(check_ds, batch_size=1, shuffle=True, num_workers=0, pin_memory=torch.cuda.is_available())
     check_data = monai.utils.misc.first(loader)
     im, seg = (check_data['image'][0], check_data['label'][0])
     print(im.shape, seg.shape)
 
+
     vol = im[0].numpy()
     mask = seg[0].numpy()
 
-    print(vol.shape)
+    print(vol.shape, mask.shape)
     plot3d(vol)
     plot3d(mask)

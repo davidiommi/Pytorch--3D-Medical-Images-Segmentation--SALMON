@@ -9,11 +9,11 @@ Additional packages can be installed with "pip install -r requirements.txt"
 *******************************************************************************
 ## Python scripts and their function
 
-- organize_folder_structure.py: Organize the data in the folder structure (training,validation,testing) for the network
+- organize_folder_structure.py: Organize the data in the folder structure (training,validation,testing) for the network. Labels are resampled and resized to the corresponding image, to avoid conflicts.
 
 - init.py: List of options used to train the network. 
 
-- check_loader_patches: Shows example of patches fed to the network during the training  
+- check_loader_patches: Shows example of patches fed to the network during the training.  
 
 - networks.py: The architecture available for segmentation is a nn-Unet.
 
@@ -23,8 +23,22 @@ Additional packages can be installed with "pip install -r requirements.txt"
 *******************************************************************************
 ## Usage
 ### Folders structure:
-Use first "organize_folder_structure.py" to create organize the data in the following folder structure:
 
+Use first "organize_folder_structure.py" to create organize the data.
+Modify the input parameters to select the two folders: images and labels folders with the dataset.
+
+    .
+	├── Data_folder                   
+	|   ├── CT               
+	|   |   ├── 1.nii 
+    |   |   ├── 2.nii 	
+	|   |   └── 3.nii                     
+	|   ├── CT_labels                         
+	|   |   ├── 1.nii 
+    |   |   ├── 2.nii 	
+	|   |   └── 3.nii  
+
+Data structure after running it:
 
 	.
 	├── Data_folder                   
@@ -48,8 +62,7 @@ Use first "organize_folder_structure.py" to create organize the data in the foll
 	|   |   └── test             
 	|   |   |   ├── label5.nii              
 	|   |   |   └── label6.nii
-
-Modify the input parameters to select folders and divide the dataset 
+ 
 *******************************************************************************
 ### Training:
 Modify the "init.py" to set the parameters and start the training/testing on the data. Read the descriptions for each parameter.
@@ -67,7 +80,8 @@ Launch "predict_single_image.py" to test the network. Modify the parameters in t
 *******************************************************************************
 ### Tips:
 Use and modify "check_loader_patches.py" to check the patches fed during training. 
-The "networks.py" calls the nn-Unet, which adapts itself to the input data (resolution and patches size) 
+"Organize_folder_structure.py" solves dimensionality conflicts if the label has different size and resolution of the image. Check on 3DSlicer or ITKSnap if your data are correctly centered-overlaid.
+The "networks.py" calls the nn-Unet, which adapts itself to the input data (resolution and patches size). The script also saves the graph of you network, so you can visualize it. 
 Is it possible to add other networks, but for segmentation the U-net architecture is the state of the art.
 
 

@@ -140,11 +140,11 @@ if __name__ == '__main__':
     network = build_net()
     net = network.cuda().eval()
 
-    print(net)
-
     data = Variable(torch.randn(int(opt.batch_size), int(opt.in_channels), int(opt.patch_size[0]), int(opt.patch_size[1]), int(opt.patch_size[2]))).cuda()
 
     out = net(data)
+
+    torch.onnx.export(net, data, "Unet_model_graph.onnx")
 
     summary(net,data)
     print("out size: {}".format(out.size()))
