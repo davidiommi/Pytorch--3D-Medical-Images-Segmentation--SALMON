@@ -70,8 +70,8 @@ Data structure after running it:
  
 *******************************************************************************
 ### Training:
-Modify the "init.py" to set the parameters and start the training/testing on the data. Read the descriptions for each parameter.
-Afterwards launch the train.py for training. Tensorboard is available to monitor the training:	
+- Modify the "init.py" to set the parameters and start the training/testing on the data. Read the descriptions for each parameter.
+- Afterwards launch the train.py for training. Tensorboard is available to monitor the training:	
 
 ![training](images/salmon3.JPG)![training2](images/salmon4.JPG)
 
@@ -84,15 +84,15 @@ The following images show the segmentation of carotid artery from MR sequence
 Launch "predict_single_image.py" to test the network. Modify the parameters in the parse section to select the path of the weights, images to infer and result. 
 *******************************************************************************
 ### Tips:
-Use and modify "check_loader_patches.py" to check the patches fed during training. 
-"Organize_folder_structure.py" solves dimensionality conflicts if the label has different size and resolution of the image. Check on 3DSlicer or ITKSnap if your data are correctly centered-overlaid.
-The "networks.py" calls the nn-Unet, which adapts itself to the input data (resolution and patches size). The script also saves the graph of you network, so you can visualize it. 
-Is it possible to add other networks, but for segmentation the U-net architecture is the state of the art.
-During the training phase, the script crops the image background and pad the image if the post-cropping size is smaller than the patch size you set in init.py
+- Use and modify "check_loader_patches.py" to check the patches fed during training. 
+- "Organize_folder_structure.py" solves dimensionality conflicts if the label has different size and resolution of the image. Check on 3DSlicer or ITKSnap if your data are correctly centered-overlaid.
+- The "networks.py" calls the nn-Unet, which adapts itself to the input data (resolution and patches size). The script also saves the graph of you network, so you can visualize it. 
+- Is it possible to add other networks, but for segmentation the U-net architecture is the state of the art.
+- During the training phase, the script crops the image background and pad the image if the post-cropping size is smaller than the patch size you set in init.py
 
 
 ### Sample script inference
-The label can be omitted (None) if you segment an unknown image. You can add the --resolution if you resampled the data during training (look at the argsparse in the code).
+- The label can be omitted (None) if you segment an unknown image. You can add the --resolution if you resampled the data during training (look at the argsparse in the code).
 ```console
 python predict_single_image.py --image './Data_folder/images/train/image13.nii' --label './Data_folder/labels/train/label13.nii' --result './Data_folder/results/train/prova.nii' --weights './best_metric_model.pth'
 ```
