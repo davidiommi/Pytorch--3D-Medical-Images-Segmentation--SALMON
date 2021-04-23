@@ -17,7 +17,7 @@ parser.add_argument("--image", type=str, default='./Data_folder/images/test/imag
 parser.add_argument("--label", type=str, default='./Data_folder/labels/test/label0.nii')
 parser.add_argument("--result", type=str, default='./Data_folder/test.nii', help='path to the .nii result to save')
 parser.add_argument("--weights", type=str, default='./best_metric_model.pth', help='network weights to load')
-parser.add_argument("--resolution", default=[3,3,3], help='New resolution')
+parser.add_argument("--resolution", default=[3,3,3], help='New resolution if you want to resample')
 parser.add_argument("--patch_size", type=int, nargs=3, default=(128, 128, 64), help="Input dimension for the generator")
 parser.add_argument('--gpu_ids', type=str, default='2,3', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
 args = parser.parse_args()
@@ -59,7 +59,6 @@ def statistics_crop(image, resolution):
     reader.SetFileName(image)
     image_itk = reader.Execute()
     original_resolution = image_itk.GetSpacing()
-
 
     # original size
     transforms = Compose([
@@ -247,9 +246,10 @@ def segment(image, label, result, weights, resolution, patch_size):
             print("Evaluation Metric (Dice):", metric)
 
         result_array = val_outputs.squeeze().data.cpu().numpy()
-
+        # Remove the pad if the image was smaller than the patch in some directions
         result_array = result_array[0:resampled_size[0],0:resampled_size[1],0:resampled_size[2]]
 
+        # resample back to the original resolution
         if resolution is not None:
 
             result_array_np = np.transpose(result_array, (2, 1, 0))
@@ -260,8 +260,8 @@ def segment(image, label, result, weights, resolution, patch_size):
 
             result_array = np.transpose(np.rint(sitk.GetArrayFromImage(res)), axes=(2, 1, 0))
 
+        # recover the cropped background before saving the image
         empty_array = np.zeros(original_shape)
-
         empty_array[coord1[0]:coord2[0],coord1[1]:coord2[1],coord1[2]:coord2[2]] = result_array
 
         result_seg = from_numpy_to_itk(empty_array, image)
