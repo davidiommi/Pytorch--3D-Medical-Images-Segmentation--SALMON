@@ -65,8 +65,8 @@ if __name__ == "__main__":
 
     opt = Options().parse()
 
-    train_images = sorted(glob(os.path.join(opt.images_folder, 'train', 'image*.nii')))
-    train_segs = sorted(glob(os.path.join(opt.labels_folder, 'train', 'label*.nii')))
+    train_images = sorted(glob(os.path.join(opt.images_folder, 'test', 'image*.nii')))
+    train_segs = sorted(glob(os.path.join(opt.labels_folder, 'test', 'label*.nii')))
 
     data_dicts = [{'image': image_name, 'label': label_name}
                   for image_name, label_name in zip(train_images, train_segs)]
@@ -75,39 +75,29 @@ if __name__ == "__main__":
 
         LoadImaged(keys=['image', 'label']),
         AddChanneld(keys=['image', 'label']),
-        CropForegroundd(keys=['image', 'label'], source_key='image'),
-        # ThresholdIntensityd(keys=['image'],threshold=-350, above=True, cval=-350),
-        # ThresholdIntensityd(keys=['image'], threshold=350, above=False, cval=350),
+        CropForegroundd(keys=['image', 'label'], source_key='image', start_coord_key='foreground_start_coord',
+                        end_coord_key='foreground_end_coord', ),  # crop CropForeground
+        ThresholdIntensityd(keys=['image'],threshold=-350, above=True, cval=-350),
+        ThresholdIntensityd(keys=['image'], threshold=350, above=False, cval=350),
+
         NormalizeIntensityd(keys=['image']),
         ScaleIntensityd(keys=['image']),
-        # RandGaussianSmoothd(
-        #     keys=["image"],
-        #     sigma_x=(0.5, 1.15),
-        #     sigma_y=(0.5, 1.15),
-        #     sigma_z=(0.5, 1.15),
-        #     prob=0.15,
-        # ),
         Spacingd(keys=['image', 'label'], pixdim=opt.resolution, mode=('bilinear', 'nearest')),
-        # RandFlipd(keys=['image', 'label'], prob=1, spatial_axis=2),
-        # RandAffined(keys=['image', 'label'], mode=('bilinear', 'nearest'), prob=1,
-        #             rotate_range=(np.pi / 36, np.pi / 4, np.pi / 36)),
-        # Rand3DElasticd(keys=['image', 'label'], mode=('bilinear', 'nearest'), prob=1,
-        #                sigma_range=(5, 8), magnitude_range=(100, 200), scale_range=(0.20, 0.20, 0.20)),
-        # RandAdjustContrastd(keys=['image'], gamma=(0.5, 3), prob=1),
-        # RandGaussianNoised(keys=['image'], prob=1, mean=np.random.uniform(0, 0.5), std=np.random.uniform(0, 1)),
-        # RandShiftIntensityd(keys=['image'], offsets=np.random.uniform(0,0.3), prob=1),
-        SpatialPadd(keys=['image', 'label'], spatial_size=opt.patch_size),
-        # RandSpatialCropd(keys=['image', 'label'], roi_size=opt.patch_size, random_size=False),
+
+        SpatialPadd(keys=['image', 'label'], spatial_size=opt.patch_size, method= 'end'),
+        RandSpatialCropd(keys=['image', 'label'], roi_size=opt.patch_size, random_size=False),
         # Orientationd(keys=["image", "label"], axcodes="PIL"),
-        ToTensord(keys=['image', 'label'])
+        ToTensord(keys=['image', 'label','foreground_start_coord', 'foreground_end_coord'],)
     ]
 
     transform = Compose(monai_transforms)
     check_ds = monai.data.Dataset(data=data_dicts, transform=transform)
     loader = DataLoader(check_ds, batch_size=1, shuffle=True, num_workers=0, pin_memory=torch.cuda.is_available())
     check_data = monai.utils.misc.first(loader)
-    im, seg = (check_data['image'][0], check_data['label'][0])
-    print(im.shape, seg.shape)
+    im, seg, coord1, coord2 = (check_data['image'][0], check_data['label'][0],check_data['foreground_start_coord'][0],
+                      check_data['foreground_end_coord'][0])
+
+    print(im.shape, seg.shape, coord1, coord2)
 
 
     vol = im[0].numpy()

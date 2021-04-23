@@ -98,8 +98,8 @@ def main():
             LoadImaged(keys=['image', 'label']),
             AddChanneld(keys=['image', 'label']),
             CropForegroundd(keys=['image', 'label'], source_key='image'),               # crop CropForeground
-            # ThresholdIntensityd(keys=['image'], threshold=-350, above=True, cval=-350),  # Threshold CT
-            # ThresholdIntensityd(keys=['image'], threshold=350, above=False, cval=350),
+            ThresholdIntensityd(keys=['image'], threshold=-350, above=True, cval=-350),  # Threshold CT
+            ThresholdIntensityd(keys=['image'], threshold=350, above=False, cval=350),
 
             NormalizeIntensityd(keys=['image']),                                          # augmentation
             ScaleIntensityd(keys=['image']),                                              # intensity
@@ -122,7 +122,7 @@ def main():
             RandGaussianNoised(keys=['image'], prob=0.1, mean=np.random.uniform(0, 0.5), std=np.random.uniform(0, 1)),
             RandShiftIntensityd(keys=['image'], offsets=np.random.uniform(0,0.3), prob=0.1),
 
-            SpatialPadd(keys=['image', 'label'], spatial_size=opt.patch_size),  # pad if the image is smaller than patch
+            SpatialPadd(keys=['image', 'label'], spatial_size=opt.patch_size, method= 'end'),  # pad if the image is smaller than patch
             RandSpatialCropd(keys=['image', 'label'], roi_size=opt.patch_size, random_size=False),
             ToTensord(keys=['image', 'label'])
         ]
@@ -131,14 +131,14 @@ def main():
             LoadImaged(keys=['image', 'label']),
             AddChanneld(keys=['image', 'label']),
             CropForegroundd(keys=['image', 'label'], source_key='image'),                   # crop CropForeground
-            # ThresholdIntensityd(keys=['image'], threshold=-350, above=True, cval=-350),     # Threshold CT
-            # ThresholdIntensityd(keys=['image'], threshold=350, above=False, cval=350),
+            ThresholdIntensityd(keys=['image'], threshold=-350, above=True, cval=-350),     # Threshold CT
+            ThresholdIntensityd(keys=['image'], threshold=350, above=False, cval=350),
 
             NormalizeIntensityd(keys=['image']),                                      # intensity
             ScaleIntensityd(keys=['image']),
             Spacingd(keys=['image', 'label'], pixdim=opt.resolution, mode=('bilinear', 'nearest')),  # resolution
 
-            SpatialPadd(keys=['image', 'label'], spatial_size=opt.patch_size),  # pad if the image is smaller than patch
+            SpatialPadd(keys=['image', 'label'], spatial_size=opt.patch_size, method= 'end'),  # pad if the image is smaller than patch
             ToTensord(keys=['image', 'label'])
         ]
     else:
@@ -146,8 +146,8 @@ def main():
             LoadImaged(keys=['image', 'label']),
             AddChanneld(keys=['image', 'label']),
             CropForegroundd(keys=['image', 'label'], source_key='image'),               # crop CropForeground
-            # ThresholdIntensityd(keys=['image'], threshold=-350, above=True, cval=-350),  # Threshold CT
-            # ThresholdIntensityd(keys=['image'], threshold=350, above=False, cval=350),
+            ThresholdIntensityd(keys=['image'], threshold=-350, above=True, cval=-350),  # Threshold CT
+            ThresholdIntensityd(keys=['image'], threshold=350, above=False, cval=350),
 
             NormalizeIntensityd(keys=['image']),                                          # augmentation
             ScaleIntensityd(keys=['image']),                                              # intensity
@@ -169,7 +169,7 @@ def main():
             RandGaussianNoised(keys=['image'], prob=0.1, mean=np.random.uniform(0, 0.5), std=np.random.uniform(0, 1)),
             RandShiftIntensityd(keys=['image'], offsets=np.random.uniform(0,0.3), prob=0.1),
 
-            SpatialPadd(keys=['image', 'label'], spatial_size=opt.patch_size),  # pad if the image is smaller than patch
+            SpatialPadd(keys=['image', 'label'], spatial_size=opt.patch_size, method= 'end'),  # pad if the image is smaller than patch
             RandSpatialCropd(keys=['image', 'label'], roi_size=opt.patch_size, random_size=False),
             ToTensord(keys=['image', 'label'])
         ]
@@ -184,7 +184,7 @@ def main():
             NormalizeIntensityd(keys=['image']),                                      # intensity
             ScaleIntensityd(keys=['image']),
 
-            SpatialPadd(keys=['image', 'label'], spatial_size=opt.patch_size),  # pad if the image is smaller than patch
+            SpatialPadd(keys=['image', 'label'], spatial_size=opt.patch_size, method= 'end'),  # pad if the image is smaller than patch
             ToTensord(keys=['image', 'label'])
         ]
 
@@ -196,15 +196,15 @@ def main():
     train_loader = DataLoader(check_train, batch_size=opt.batch_size, shuffle=True, num_workers=opt.workers, pin_memory=torch.cuda.is_available())
 
     # create a training_dice data loader
-    check_val = monai.data.CacheDataset(data=train_dice_dicts, transform=val_transforms)
+    check_val = monai.data.Dataset(data=train_dice_dicts, transform=val_transforms)
     train_dice_loader = DataLoader(check_val, batch_size=1, num_workers=opt.workers, pin_memory=torch.cuda.is_available())
 
     # create a validation data loader
-    check_val = monai.data.CacheDataset(data=val_dicts, transform=val_transforms)
+    check_val = monai.data.Dataset(data=val_dicts, transform=val_transforms)
     val_loader = DataLoader(check_val, batch_size=1, num_workers=opt.workers, pin_memory=torch.cuda.is_available())
 
     # create a validation data loader
-    check_val = monai.data.CacheDataset(data=test_dicts, transform=val_transforms)
+    check_val = monai.data.Dataset(data=test_dicts, transform=val_transforms)
     test_loader = DataLoader(check_val, batch_size=1, num_workers=opt.workers, pin_memory=torch.cuda.is_available())
 
     # # try to use all the available GPUs
@@ -312,6 +312,9 @@ def main():
                 plot_2d_or_3d_image(val_images, epoch + 1, writer, index=0, tag="validation image")
                 plot_2d_or_3d_image(val_labels, epoch + 1, writer, index=0, tag="validation label")
                 plot_2d_or_3d_image(val_outputs, epoch + 1, writer, index=0, tag="validation inference")
+                plot_2d_or_3d_image(test_images, epoch + 1, writer, index=0, tag="test image")
+                plot_2d_or_3d_image(test_labels, epoch + 1, writer, index=0, tag="test label")
+                plot_2d_or_3d_image(test_outputs, epoch + 1, writer, index=0, tag="test inference")
 
     print(f"train completed, best_metric: {best_metric:.4f} at epoch: {best_metric_epoch}")
     writer.close()
