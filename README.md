@@ -102,4 +102,10 @@ python predict_single_image.py --image './Data_folder/images/train/image13.nii' 
 The subfolder "multi_label_segmentation_example" shows how to change the code for multi_label scenario.
 The example segment the prostate (1 channel input) in the transition zone and peripheral zone (2 channels output).
 
+Some note:
+- You must add an additional channel for the background. Example: 0 background, 1 prostate, 2 prostate tumor = 3 out channels in total.
+- Tensorboard can show you all segmented channels, but for now the metric is the Mean-Dice (of all channels). If you want to evaluate the Dice score for each channel you 
+  have to modify a bit the plot_dice function. I will do it...one day...who knows...maybe not
+- The loss is the DiceLoss + CrossEntropy. You can modify it if you want to try others (https://docs.monai.io/en/latest/losses.html#diceloss)
+
 Check more examples at https://github.com/Project-MONAI/tutorials/blob/master/3d_segmentation/spleen_segmentation_3d.ipynb.
