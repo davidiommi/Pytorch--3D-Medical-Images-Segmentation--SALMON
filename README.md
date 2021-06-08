@@ -79,6 +79,11 @@ Sample images: on the left side the image, in the middle the result of the segme
 The following images show the segmentation of carotid artery from MR sequence
 
 ![Image](images/image.gif)![result](images/result.gif)![label](images/label.gif)
+
+Sample images: on the left side the image, in the middle the result of the segmentation and on the right side the true label
+The following images show the multi-label segmentation of prostate transition zone and peripheral zone from MR sequence
+
+![Image1](images/prostate.gif)![result1](images/prostate_inf.gif)![label1](images/prostate_label.gif)
 *******************************************************************************
 ### Inference:
 Launch "predict_single_image.py" to test the network. Modify the parameters in the parse section to select the path of the weights, images to infer and result. 
@@ -99,8 +104,9 @@ python predict_single_image.py --image './Data_folder/images/train/image13.nii' 
 *******************************************************************************
 ### Multi-channel segmentation: 
 
-The subfolder "multi_label_segmentation_example" shows how to change the code for multi_label scenario.
-The example segment the prostate (1 channel input) in the transition zone and peripheral zone (2 channels output).
+The subfolder "multi_label_segmentation_example" include the modified code for multi_labels scenario.
+The example segment the prostate (1 channel input) in the transition zone and peripheral zone (2 channels output). 
+The gif files with some example images are shown above.
 
 Some note:
 - You must add an additional channel for the background. Example: 0 background, 1 prostate, 2 prostate tumor = 3 out channels in total.
