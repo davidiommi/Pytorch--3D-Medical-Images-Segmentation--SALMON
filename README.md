@@ -99,8 +99,7 @@ python predict_single_image.py --image './Data_folder/images/train/image13.nii' 
 *******************************************************************************
 ### Multi-channel segmentation: 
 
-To implement the multilabel segmentation a few lines must be added:
-- In the transforms section of the data channels must added and concatenated
-- The loss function must be modified (Dice to softDice)
+The subfolder "multi_label_segmentation_example" shows how to change the code for multi_label scenario.
+The example segment the prostate (1 channel input) in the transition zone and peripheral zone (2 channels output).
 
-Check the example at https://github.com/Project-MONAI/tutorials/blob/master/3d_segmentation/spleen_segmentation_3d.ipynb as example.
+Check more examples at https://github.com/Project-MONAI/tutorials/blob/master/3d_segmentation/spleen_segmentation_3d.ipynb.
