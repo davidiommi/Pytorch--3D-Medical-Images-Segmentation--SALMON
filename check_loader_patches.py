@@ -65,8 +65,8 @@ if __name__ == "__main__":
 
     opt = Options().parse()
 
-    train_images = sorted(glob(os.path.join(opt.images_folder, 'test', 'image*.nii')))
-    train_segs = sorted(glob(os.path.join(opt.labels_folder, 'test', 'label*.nii')))
+    train_images = sorted(glob(os.path.join(opt.images_folder, 'train', 'image*.nii')))
+    train_segs = sorted(glob(os.path.join(opt.labels_folder, 'train', 'label*.nii')))
 
     data_dicts = [{'image': image_name, 'label': label_name}
                   for image_name, label_name in zip(train_images, train_segs)]
@@ -75,18 +75,17 @@ if __name__ == "__main__":
 
         LoadImaged(keys=['image', 'label']),
         AddChanneld(keys=['image', 'label']),
+        Orientationd(keys=["image", "label"], axcodes="RAS"),
+        ThresholdIntensityd(keys=['image'], threshold=-135, above=True, cval=-135),
+        ThresholdIntensityd(keys=['image'], threshold=215, above=False, cval=215),
         CropForegroundd(keys=['image', 'label'], source_key='image', start_coord_key='foreground_start_coord',
                         end_coord_key='foreground_end_coord', ),  # crop CropForeground
-        ThresholdIntensityd(keys=['image'],threshold=-350, above=True, cval=-350),
-        ThresholdIntensityd(keys=['image'], threshold=350, above=False, cval=350),
-
         NormalizeIntensityd(keys=['image']),
         ScaleIntensityd(keys=['image']),
-        Spacingd(keys=['image', 'label'], pixdim=opt.resolution, mode=('bilinear', 'nearest')),
+        # Spacingd(keys=['image', 'label'], pixdim=opt.resolution, mode=('bilinear', 'nearest')),
 
         SpatialPadd(keys=['image', 'label'], spatial_size=opt.patch_size, method= 'end'),
         RandSpatialCropd(keys=['image', 'label'], roi_size=opt.patch_size, random_size=False),
-        # Orientationd(keys=["image", "label"], axcodes="PIL"),
         ToTensord(keys=['image', 'label','foreground_start_coord', 'foreground_end_coord'],)
     ]
 
@@ -98,7 +97,6 @@ if __name__ == "__main__":
                       check_data['foreground_end_coord'][0])
 
     print(im.shape, seg.shape, coord1, coord2)
-
 
     vol = im[0].numpy()
     mask = seg[0].numpy()

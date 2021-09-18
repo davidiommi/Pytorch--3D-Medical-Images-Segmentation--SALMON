@@ -1,2 +1,14 @@
-simpleITK==1.2.4
+simpleITK==2.1.0
 torchsummaryX
+nibabel
+pillow 
+tensorboard
+gdown
+pytorch-ignite==0.4.4
+itk
+tqdm
+lmdb
+psutil
+pandas
+einops
+scikit-image

@@ -1,21 +1,26 @@
 ![Salmon-logo-1](images/salmon.JPG)
-# SALMON: Segmentation deep learning ALgorithm based on MONai toolbox
-SALMON is a computational toolbox for segmentation using neural networks (3D patches-based segmentation)
-SALMON is based on MONAI: a PyTorch-based, open-source framework for deep learning in healthcare imaging. (https://github.com/Project-MONAI/MONAI)
+# SALMON v.2: Segmentation deep learning ALgorithm based on MONai toolbox
+- SALMON is a computational toolbox for segmentation using neural networks (3D patches-based segmentation)
+- SALMON is based on  NN-UNET and MONAI: PyTorch-based, open-source frameworks for deep learning in healthcare imaging. 
+(https://github.com/Project-MONAI/MONAI)
+(https://github.com/MIC-DKFZ/nnUNet)
+
+This is my "open-box" version if I want to modify the parameters for some particular task, while the two above are hard-coded.
+
 *******************************************************************************
 ## Requirements
-See requirements.txt list. We use "nvcr.io/nvidia/pytorch:19.03-py3" docker and we install all the requirements with:
-"pip install -r requirements.txt"
+We download the official MONAI DockerHub, with the latest MONAI version. Please visit https://docs.monai.io/en/latest/installation.html
+Additional packages can be installed with "pip install -r requirements.txt"
 *******************************************************************************
 ## Python scripts and their function
 
-- organize_folder_structure.py: Organize the data in the folder structure for the network
+- organize_folder_structure.py: Organize the data in the folder structure (training,validation,testing) for the network. Labels are resampled and resized to the corresponding image, to avoid conflicts.
 
 - init.py: List of options used to train the network. 
 
-- check_loader_patches: Shows example of patches fed to the network during the training  
+- check_loader_patches: Shows example of patches fed to the network during the training.  
 
-- networks.py: The architectures available for segmentation.
+- networks.py: The architecture available for segmentation is a nn-Unet.
 
 - train.py: Runs the training
 
@@ -23,8 +28,22 @@ See requirements.txt list. We use "nvcr.io/nvidia/pytorch:19.03-py3" docker and 
 *******************************************************************************
 ## Usage
 ### Folders structure:
-Use first "organize_folder_structure.py" to create organize the data in the following folder structure:
 
+Use first "organize_folder_structure.py" to create organize the data.
+Modify the input parameters to select the two folders: images and labels folders with the dataset.
+
+    .
+	├── Data_folder                   
+	|   ├── CT               
+	|   |   ├── 1.nii 
+    |   |   ├── 2.nii 	
+	|   |   └── 3.nii                     
+	|   ├── CT_labels                         
+	|   |   ├── 1.nii 
+    |   |   ├── 2.nii 	
+	|   |   └── 3.nii  
+
+Data structure after running it:
 
 	.
 	├── Data_folder                   
@@ -48,32 +67,51 @@ Use first "organize_folder_structure.py" to create organize the data in the foll
 	|   |   └── test             
 	|   |   |   ├── label5.nii              
 	|   |   |   └── label6.nii
+ 
 *******************************************************************************
 ### Training:
-Modify the "init.py" to set the parameters and start the training/testing on the data.
-Afterwards launch the train.py for training. Tensorboard is available to monitor the training:	
+- Modify the "init.py" to set the parameters and start the training/testing on the data. Read the descriptions for each parameter.
+- Afterwards launch the train.py for training. Tensorboard is available to monitor the training:	
 
-![training](images/salmon3.JPG)![training2](images/salmon4.JPG)![training3](images/salmon5.JPG)![training2´4](images/salmon6.JPG)
+![training](images/salmon3.JPG)![training2](images/salmon4.JPG)
 
 Sample images: on the left side the image, in the middle the result of the segmentation and on the right side the true label
 The following images show the segmentation of carotid artery from MR sequence
 
 ![Image](images/image.gif)![result](images/result.gif)![label](images/label.gif)
+
+Sample images: on the left side the image, in the middle the result of the segmentation and on the right side the true label
+The following images show the multi-label segmentation of prostate transition zone and peripheral zone from MR sequence
+
+![Image1](images/prostate.gif)![result1](images/prostate_inf.gif)![label1](images/prostate_label.gif)
 *******************************************************************************
 ### Inference:
 Launch "predict_single_image.py" to test the network. Modify the parameters in the parse section to select the path of the weights, images to infer and result. 
 *******************************************************************************
 ### Tips:
-Use and modify "check_loader_patches.py" to check the patches fed during training. 
-Use and modify "networks.py" to modify the network and check the number of parameters. 
+- Use and modify "check_loader_patches.py" to check the patches fed during training. 
+- "Organize_folder_structure.py" solves dimensionality conflicts if the label has different size and resolution of the image. Check on 3DSlicer or ITKSnap if your data are correctly centered-overlaid.
+- The "networks.py" calls the nn-Unet, which adapts itself to the input data (resolution and patches size). The script also saves the graph of you network, so you can visualize it. 
+- Is it possible to add other networks, but for segmentation the U-net architecture is the state of the art.
+- During the training phase, the script crops the image background and pad the image if the post-cropping size is smaller than the patch size you set in init.py
 
 
 ### Sample script inference
+- The label can be omitted (None) if you segment an unknown image. You can add the --resolution if you resampled the data during training (look at the argsparse in the code).
 ```console
 python predict_single_image.py --image './Data_folder/images/train/image13.nii' --label './Data_folder/labels/train/label13.nii' --result './Data_folder/results/train/prova.nii' --weights './best_metric_model.pth'
 ```
 *******************************************************************************
-### Future Development: TO DO list
+### Multi-channel segmentation: 
 
-- Add more networks structures in networks.py
-- Implement it for multilabel segmentation in the same script. (call multilabel losses)
+The subfolder "multi_label_segmentation_example" include the modified code for multi_labels scenario.
+The example segment the prostate (1 channel input) in the transition zone and peripheral zone (2 channels output). 
+The gif files with some example images are shown above.
+
+Some note:
+- You must add an additional channel for the background. Example: 0 background, 1 prostate, 2 prostate tumor = 3 out channels in total.
+- Tensorboard can show you all segmented channels, but for now the metric is the Mean-Dice (of all channels). If you want to evaluate the Dice score for each channel you 
+  have to modify a bit the plot_dice function. I will do it...one day...who knows...maybe not
+- The loss is the DiceLoss + CrossEntropy. You can modify it if you want to try others (https://docs.monai.io/en/latest/losses.html#diceloss)
+
+Check more examples at https://github.com/Project-MONAI/tutorials/blob/master/3d_segmentation/spleen_segmentation_3d.ipynb.

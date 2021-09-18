@@ -64,11 +64,11 @@ def main():
     test_images = sorted(glob(os.path.join(opt.images_folder, 'test', 'image*.nii')))
     test_segs = sorted(glob(os.path.join(opt.labels_folder, 'test', 'label*.nii')))
 
-    # augment the data list for training
-    for i in range(int(opt.increase_factor_data)):
-
-        train_images.extend(train_images)
-        train_segs.extend(train_segs)
+    # # augment the data list for training
+    # for i in range(int(opt.increase_factor_data)):
+    #
+    #     train_images.extend(train_images)
+    #     train_segs.extend(train_segs)
 
     print('Number of training patches per epoch:', len(train_images))
     print('Number of training images per epoch:', len(train_images_for_dice))
@@ -97,17 +97,17 @@ def main():
         train_transforms = [
             LoadImaged(keys=['image', 'label']),
             AddChanneld(keys=['image', 'label']),
+            ThresholdIntensityd(keys=['image'], threshold=-135, above=True, cval=-135),
+            ThresholdIntensityd(keys=['image'], threshold=215, above=False, cval=215),
             CropForegroundd(keys=['image', 'label'], source_key='image'),               # crop CropForeground
-            ThresholdIntensityd(keys=['image'], threshold=-350, above=True, cval=-350),  # Threshold CT
-            ThresholdIntensityd(keys=['image'], threshold=350, above=False, cval=350),
 
             NormalizeIntensityd(keys=['image']),                                          # augmentation
             ScaleIntensityd(keys=['image']),                                              # intensity
             Spacingd(keys=['image', 'label'], pixdim=opt.resolution, mode=('bilinear', 'nearest')),  # resolution
 
-            RandFlipd(keys=['image', 'label'], prob=0.1, spatial_axis=1),
-            RandFlipd(keys=['image', 'label'], prob=0.1, spatial_axis=0),
-            RandFlipd(keys=['image', 'label'], prob=0.1, spatial_axis=2),
+            RandFlipd(keys=['image', 'label'], prob=0.15, spatial_axis=1),
+            RandFlipd(keys=['image', 'label'], prob=0.15, spatial_axis=0),
+            RandFlipd(keys=['image', 'label'], prob=0.15, spatial_axis=2),
             RandAffined(keys=['image', 'label'], mode=('bilinear', 'nearest'), prob=0.1,
                         rotate_range=(np.pi / 36, np.pi / 36, np.pi * 2), padding_mode="zeros"),
             RandAffined(keys=['image', 'label'], mode=('bilinear', 'nearest'), prob=0.1,
@@ -119,7 +119,7 @@ def main():
                            padding_mode="zeros"),
             RandGaussianSmoothd(keys=["image"], sigma_x=(0.5, 1.15), sigma_y=(0.5, 1.15), sigma_z=(0.5, 1.15), prob=0.1,),
             RandAdjustContrastd(keys=['image'], gamma=(0.5, 2.5), prob=0.1),
-            RandGaussianNoised(keys=['image'], prob=0.1, mean=np.random.uniform(0, 0.5), std=np.random.uniform(0, 1)),
+            RandGaussianNoised(keys=['image'], prob=0.1, mean=np.random.uniform(0, 0.5), std=np.random.uniform(0, 15)),
             RandShiftIntensityd(keys=['image'], offsets=np.random.uniform(0,0.3), prob=0.1),
 
             SpatialPadd(keys=['image', 'label'], spatial_size=opt.patch_size, method= 'end'),  # pad if the image is smaller than patch
@@ -130,9 +130,9 @@ def main():
         val_transforms = [
             LoadImaged(keys=['image', 'label']),
             AddChanneld(keys=['image', 'label']),
+            ThresholdIntensityd(keys=['image'], threshold=-135, above=True, cval=-135),
+            ThresholdIntensityd(keys=['image'], threshold=215, above=False, cval=215),
             CropForegroundd(keys=['image', 'label'], source_key='image'),                   # crop CropForeground
-            ThresholdIntensityd(keys=['image'], threshold=-350, above=True, cval=-350),     # Threshold CT
-            ThresholdIntensityd(keys=['image'], threshold=350, above=False, cval=350),
 
             NormalizeIntensityd(keys=['image']),                                      # intensity
             ScaleIntensityd(keys=['image']),
@@ -145,16 +145,16 @@ def main():
         train_transforms = [
             LoadImaged(keys=['image', 'label']),
             AddChanneld(keys=['image', 'label']),
+            ThresholdIntensityd(keys=['image'], threshold=-135, above=True, cval=-135),
+            ThresholdIntensityd(keys=['image'], threshold=215, above=False, cval=215),
             CropForegroundd(keys=['image', 'label'], source_key='image'),               # crop CropForeground
-            ThresholdIntensityd(keys=['image'], threshold=-350, above=True, cval=-350),  # Threshold CT
-            ThresholdIntensityd(keys=['image'], threshold=350, above=False, cval=350),
 
             NormalizeIntensityd(keys=['image']),                                          # augmentation
             ScaleIntensityd(keys=['image']),                                              # intensity
 
-            RandFlipd(keys=['image', 'label'], prob=0.1, spatial_axis=1),
-            RandFlipd(keys=['image', 'label'], prob=0.1, spatial_axis=0),
-            RandFlipd(keys=['image', 'label'], prob=0.1, spatial_axis=2),
+            RandFlipd(keys=['image', 'label'], prob=0.15, spatial_axis=1),
+            RandFlipd(keys=['image', 'label'], prob=0.15, spatial_axis=0),
+            RandFlipd(keys=['image', 'label'], prob=0.15, spatial_axis=2),
             RandAffined(keys=['image', 'label'], mode=('bilinear', 'nearest'), prob=0.1,
                         rotate_range=(np.pi / 36, np.pi / 36, np.pi * 2), padding_mode="zeros"),
             RandAffined(keys=['image', 'label'], mode=('bilinear', 'nearest'), prob=0.1,
@@ -177,9 +177,9 @@ def main():
         val_transforms = [
             LoadImaged(keys=['image', 'label']),
             AddChanneld(keys=['image', 'label']),
+            ThresholdIntensityd(keys=['image'], threshold=-135, above=True, cval=-135),
+            ThresholdIntensityd(keys=['image'], threshold=215, above=False, cval=215),
             CropForegroundd(keys=['image', 'label'], source_key='image'),                   # crop CropForeground
-            ThresholdIntensityd(keys=['image'], threshold=-350, above=True, cval=-350),     # Threshold CT
-            ThresholdIntensityd(keys=['image'], threshold=350, above=False, cval=350),
 
             NormalizeIntensityd(keys=['image']),                                      # intensity
             ScaleIntensityd(keys=['image']),
@@ -192,20 +192,20 @@ def main():
     val_transforms = Compose(val_transforms)
 
     # create a training data loader
-    check_train = monai.data.CacheDataset(data=train_dicts, transform=train_transforms)
-    train_loader = DataLoader(check_train, batch_size=opt.batch_size, shuffle=True, num_workers=opt.workers, pin_memory=torch.cuda.is_available())
+    check_train = monai.data.Dataset(data=train_dicts, transform=train_transforms)
+    train_loader = DataLoader(check_train, batch_size=opt.batch_size, shuffle=True, num_workers=opt.workers, pin_memory=False)
 
     # create a training_dice data loader
     check_val = monai.data.Dataset(data=train_dice_dicts, transform=val_transforms)
-    train_dice_loader = DataLoader(check_val, batch_size=1, num_workers=opt.workers, pin_memory=torch.cuda.is_available())
+    train_dice_loader = DataLoader(check_val, batch_size=1, num_workers=opt.workers, pin_memory=False)
 
     # create a validation data loader
     check_val = monai.data.Dataset(data=val_dicts, transform=val_transforms)
-    val_loader = DataLoader(check_val, batch_size=1, num_workers=opt.workers, pin_memory=torch.cuda.is_available())
+    val_loader = DataLoader(check_val, batch_size=1, num_workers=opt.workers, pin_memory=False)
 
     # create a validation data loader
     check_val = monai.data.Dataset(data=test_dicts, transform=val_transforms)
-    test_loader = DataLoader(check_val, batch_size=1, num_workers=opt.workers, pin_memory=torch.cuda.is_available())
+    test_loader = DataLoader(check_val, batch_size=1, num_workers=opt.workers, pin_memory=False)
 
     # # try to use all the available GPUs
     # devices = get_devices_spec(None)

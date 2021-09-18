@@ -72,22 +72,6 @@ def build_net():
     from init import Options
     opt = Options().parse()
     from monai.networks.layers import Norm
-    from monai.networks.layers.factories import split_args
-    act_type, args = split_args("RELU")
-
-    # # create Unet
-    # Unet = monai.networks.nets.UNet(
-    #     dimensions=3,
-    #     in_channels=opt.in_channels,
-    #     out_channels=opt.out_channels,
-    #     channels=(64, 128, 256, 512, 1024),
-    #     strides=(2, 2, 2, 2),
-    #     act=act_type,
-    #     num_res_units=3,
-    #     dropout=0.2,
-    #     norm=Norm.BATCH,
-    #
-    # )
 
     # create nn-Unet
     if opt.resolution is None:
@@ -110,6 +94,8 @@ def build_net():
     strides.insert(0, len(spacings) * [1])
     kernels.append(len(spacings) * [3])
 
+    # # create Unet
+
     nn_Unet = monai.networks.nets.DynUNet(
         spatial_dims=3,
         in_channels=opt.in_channels,
@@ -118,8 +104,6 @@ def build_net():
         strides=strides,
         upsample_kernel_size=strides[1:],
         res_block=True,
-        # act=act_type,
-        # norm=Norm.BATCH,
     )
 
     init_weights(nn_Unet, init_type='normal')
@@ -140,7 +124,7 @@ if __name__ == '__main__':
     network = build_net()
     net = network.cuda().eval()
 
-    data = Variable(torch.randn(int(opt.batch_size), int(opt.in_channels), int(opt.patch_size[0]), int(opt.patch_size[1]), int(opt.patch_size[2]))).cuda()
+    data = Variable(torch.randn(1, int(opt.in_channels), int(opt.patch_size[0]), int(opt.patch_size[1]), int(opt.patch_size[2]))).cuda()
 
     out = net(data)
 

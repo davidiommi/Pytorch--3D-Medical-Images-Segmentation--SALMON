@@ -9,16 +9,17 @@ from monai.inferers import sliding_window_inference
 from monai.metrics import DiceMetric
 from monai.data import NiftiSaver, create_test_image_3d, list_data_collate
 from collections import OrderedDict
+from organize_folder_structure import resize, resample_sitk_image, uniform_img_dimensions
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--image", type=str, default='./Data_folder/images/train/image13.nii')
-parser.add_argument("--label", type=str, default='./Data_folder/labels/train/label13.nii')
-parser.add_argument("--result", type=str, default='./Data_folder/results/train/13.nii', help='path to the .nii result to save')
+parser.add_argument("--image", type=str, default='./Data_folder/images/test/image0.nii')
+parser.add_argument("--label", type=str, default='./Data_folder/labels/test/label0.nii')
+parser.add_argument("--result", type=str, default='./Data_folder/test.nii', help='path to the .nii result to save')
 parser.add_argument("--weights", type=str, default='./best_metric_model.pth', help='network weights to load')
-parser.add_argument("--resolution", default=None, help='New resolution')
-parser.add_argument("--patch_size", type=int, nargs=3, default=(192, 192, 160), help="Input dimension for the generator")
-parser.add_argument('--gpu_ids', type=str, default='3', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
+parser.add_argument("--resolution", default=[3,3,3], help='New resolution if you want to resample')
+parser.add_argument("--patch_size", type=int, nargs=3, default=(128, 128, 64), help="Input dimension for the generator")
+parser.add_argument('--gpu_ids', type=str, default='2,3', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
 args = parser.parse_args()
 
 
@@ -49,50 +50,65 @@ def from_numpy_to_itk(image_np, image_itk):
     return image
 
 
-def resize(img, new_size, interpolator):
-    # img = sitk.ReadImage(img)
-    dimension = img.GetDimension()
+# function to keep track of the cropped area and coordinates
+def statistics_crop(image, resolution):
 
-    # Physical image size corresponds to the largest physical size in the training set, or any other arbitrary size.
-    reference_physical_size = np.zeros(dimension)
+    files = [{"image": image}]
 
-    reference_physical_size[:] = [(sz - 1) * spc if sz * spc > mx else mx for sz, spc, mx in
-                                  zip(img.GetSize(), img.GetSpacing(), reference_physical_size)]
+    reader = sitk.ImageFileReader()
+    reader.SetFileName(image)
+    image_itk = reader.Execute()
+    original_resolution = image_itk.GetSpacing()
 
-    # Create the reference image with a zero origin, identity direction cosine matrix and dimension
-    reference_origin = np.zeros(dimension)
-    reference_direction = np.identity(dimension).flatten()
-    reference_size = new_size
-    reference_spacing = [phys_sz / (sz - 1) for sz, phys_sz in zip(reference_size, reference_physical_size)]
+    # original size
+    transforms = Compose([
+        LoadImaged(keys=['image']),
+        AddChanneld(keys=['image']),
+        ToTensord(keys=['image'])])
+    data = monai.data.Dataset(data=files, transform=transforms)
+    loader = DataLoader(data, batch_size=1, num_workers=0, pin_memory=torch.cuda.is_available())
+    loader = monai.utils.misc.first(loader)
+    im, = (loader['image'][0])
+    vol = im.numpy()
+    original_shape = vol.shape
 
-    reference_image = sitk.Image(reference_size, img.GetPixelIDValue())
-    reference_image.SetOrigin(reference_origin)
-    reference_image.SetSpacing(reference_spacing)
-    reference_image.SetDirection(reference_direction)
+    # cropped foreground size
+    transforms = Compose([
+        LoadImaged(keys=['image']),
+        AddChanneld(keys=['image']),
+        CropForegroundd(keys=['image'], source_key='image', start_coord_key='foreground_start_coord',
+                        end_coord_key='foreground_end_coord', ),  # crop CropForeground
+        ToTensord(keys=['image', 'foreground_start_coord', 'foreground_end_coord'])])
+    data = monai.data.Dataset(data=files, transform=transforms)
+    loader = DataLoader(data, batch_size=1, num_workers=0, pin_memory=torch.cuda.is_available())
+    loader = monai.utils.misc.first(loader)
+    im, coord1, coord2 = (loader['image'][0], loader['foreground_start_coord'][0], loader['foreground_end_coord'][0])
+    vol = im[0].numpy()
+    coord1 = coord1.numpy()
+    coord2 = coord2.numpy()
+    crop_shape = vol.shape
 
-    # Always use the TransformContinuousIndexToPhysicalPoint to compute an indexed point's physical coordinates as
-    # this takes into account size, spacing and direction cosines. For the vast majority of images the direction
-    # cosines are the identity matrix, but when this isn't the case simply multiplying the central index by the
-    # spacing will not yield the correct coordinates resulting in a long debugging session.
-    reference_center = np.array(
-        reference_image.TransformContinuousIndexToPhysicalPoint(np.array(reference_image.GetSize()) / 2.0))
+    if resolution is not None:
 
-    # Transform which maps from the reference_image to the current img with the translation mapping the image
-    # origins to each other.
-    transform = sitk.AffineTransform(dimension)
-    transform.SetMatrix(img.GetDirection())
-    transform.SetTranslation(np.array(img.GetOrigin()) - reference_origin)
-    # Modify the transformation to align the centers of the original and reference image instead of their origins.
-    centering_transform = sitk.TranslationTransform(dimension)
-    img_center = np.array(img.TransformContinuousIndexToPhysicalPoint(np.array(img.GetSize()) / 2.0))
-    centering_transform.SetOffset(np.array(transform.GetInverse().TransformPoint(img_center) - reference_center))
-    centered_transform = sitk.Transform(transform)
-    centered_transform.AddTransform(centering_transform)
-    # Using the linear interpolator as these are intensity images, if there is a need to resample a ground truth
-    # segmentation then the segmentation image should be resampled using the NearestNeighbor interpolator so that
-    # no new labels are introduced.
+        transforms = Compose([
+            LoadImaged(keys=['image']),
+            AddChanneld(keys=['image']),
+            CropForegroundd(keys=['image'], source_key='image'),  # crop CropForeground
+            Spacingd(keys=['image'], pixdim=resolution, mode=('bilinear')),  # resolution
+            ToTensord(keys=['image'])])
 
-    return sitk.Resample(img, reference_image, centered_transform, interpolator, 0.0)
+        data = monai.data.Dataset(data=files, transform=transforms)
+        loader = DataLoader(data, batch_size=1, num_workers=0, pin_memory=torch.cuda.is_available())
+        loader = monai.utils.misc.first(loader)
+        im, = (loader['image'][0])
+        vol = im.numpy()
+        resampled_size = vol.shape
+
+    else:
+
+        resampled_size = original_shape
+
+    return original_shape, crop_shape, coord1, coord2, resampled_size, original_resolution
 
 
 def segment(image, label, result, weights, resolution, patch_size):
@@ -104,61 +120,95 @@ def segment(image, label, result, weights, resolution, patch_size):
     else:
         files = [{"image": image}]
 
+    # original size, size after crop_background, cropped roi coordinates, cropped resampled roi size
+    original_shape, crop_shape, coord1, coord2, resampled_size, original_resolution = statistics_crop(image, resolution)
+
+    # -------------------------------
+
     if label is not None:
         if resolution is not None:
+
             val_transforms = Compose([
-                LoadNiftid(keys=['image', 'label']),
+                LoadImaged(keys=['image', 'label']),
                 AddChanneld(keys=['image', 'label']),
-                NormalizeIntensityd(keys=['image']),
+                CropForegroundd(keys=['image', 'label'], source_key='image'),  # crop CropForeground
+                ThresholdIntensityd(keys=['image'], threshold=-350, above=True, cval=-350),  # Threshold CT
+                ThresholdIntensityd(keys=['image'], threshold=350, above=False, cval=350),
+
+                NormalizeIntensityd(keys=['image']),  # intensity
                 ScaleIntensityd(keys=['image']),
-                Spacingd(keys=['image', 'label'], pixdim=resolution, mode=('bilinear', 'nearest')),
-                ToTensord(keys=['image', 'label'])
-            ])
+                Spacingd(keys=['image', 'label'], pixdim=resolution, mode=('bilinear', 'nearest')),  # resolution
+
+                SpatialPadd(keys=['image', 'label'], spatial_size=patch_size, method= 'end'),
+                ToTensord(keys=['image', 'label'])])
         else:
+
             val_transforms = Compose([
-                LoadNiftid(keys=['image', 'label']),
+                LoadImaged(keys=['image', 'label']),
                 AddChanneld(keys=['image', 'label']),
-                NormalizeIntensityd(keys=['image']),
+                CropForegroundd(keys=['image', 'label'], source_key='image'),  # crop CropForeground
+                ThresholdIntensityd(keys=['image'], threshold=-350, above=True, cval=-350),  # Threshold CT
+                ThresholdIntensityd(keys=['image'], threshold=350, above=False, cval=350),
+
+                NormalizeIntensityd(keys=['image']),  # intensity
                 ScaleIntensityd(keys=['image']),
-                ToTensord(keys=['image', 'label'])
-            ])
+
+                SpatialPadd(keys=['image', 'label'], spatial_size=patch_size, method='end'),  # pad if the image is smaller than patch
+                ToTensord(keys=['image', 'label'])])
 
     else:
         if resolution is not None:
+
             val_transforms = Compose([
-                LoadNiftid(keys=['image']),
+                LoadImaged(keys=['image']),
                 AddChanneld(keys=['image']),
-                NormalizeIntensityd(keys=['image']),
+
+                CropForegroundd(keys=['image'], source_key='image'),  # crop CropForeground
+                ThresholdIntensityd(keys=['image'], threshold=-350, above=True, cval=-350),  # Threshold CT
+                ThresholdIntensityd(keys=['image'], threshold=350, above=False, cval=350),
+
+                NormalizeIntensityd(keys=['image']),  # intensity
                 ScaleIntensityd(keys=['image']),
-                Spacingd(keys=['image'], pixdim=resolution, mode='bilinear'),
-                ToTensord(keys=['image'])
-            ])
+                Spacingd(keys=['image'], pixdim=resolution, mode=('bilinear')),  # resolution
+
+                SpatialPadd(keys=['image'], spatial_size=patch_size, method= 'end'),  # pad if the image is smaller than patch
+                ToTensord(keys=['image'])])
         else:
+
             val_transforms = Compose([
-                LoadNiftid(keys=['image']),
+                LoadImaged(keys=['image']),
                 AddChanneld(keys=['image']),
-                NormalizeIntensityd(keys=['image']),
+                CropForegroundd(keys=['image'], source_key='image'),  # crop CropForeground
+                ThresholdIntensityd(keys=['image'], threshold=-350, above=True, cval=-350),  # Threshold CT
+                ThresholdIntensityd(keys=['image'], threshold=350, above=False, cval=350),
+
+                NormalizeIntensityd(keys=['image']),  # intensity
                 ScaleIntensityd(keys=['image']),
-                ToTensord(keys=['image'])
-            ])
+
+                SpatialPadd(keys=['image'], spatial_size=patch_size, method='end'), # pad if the image is smaller than patch
+                ToTensord(keys=['image'])])
 
     val_ds = monai.data.Dataset(data=files, transform=val_transforms)
-    val_loader = DataLoader(
-        val_ds, batch_size=1, num_workers=4, collate_fn=list_data_collate, pin_memory=torch.cuda.is_available())
+    val_loader = DataLoader(val_ds, batch_size=1, num_workers=0, collate_fn=list_data_collate, pin_memory=torch.cuda.is_available())
 
-    dice_metric = DiceMetric(include_background=True, to_onehot_y=False, sigmoid=True, reduction="mean")
+    dice_metric = DiceMetric(include_background=True, reduction="mean")
+    post_trans = Compose([Activations(sigmoid=True), AsDiscrete(threshold_values=True)])
 
     # try to use all the available GPUs
-    devices = get_devices_spec(None)
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu_ids  # Multi-gpu selector for training
 
-    if len(devices) > 1:
+    if args.gpu_ids != '-1':
+        num_gpus = len(args.gpu_ids.split(','))
+    else:
+        num_gpus = 0
+    print('number of GPU:', num_gpus)
+
+    if num_gpus > 1:
 
         # build the network
-        net = build_net()
-        net = net.to(devices[0])
+        net = build_net().cuda()
 
-        net = torch.nn.DataParallel(net, device_ids=devices)
+        net = torch.nn.DataParallel(net)
         net.load_state_dict(torch.load(weights))
 
     else:
@@ -176,70 +226,58 @@ def segment(image, label, result, weights, resolution, patch_size):
         if label is None:
             for val_data in val_loader:
                 val_images = val_data["image"].cuda()
-                # define sliding window size and batch size for windows inference
                 val_outputs = sliding_window_inference(val_images, roi_size, sw_batch_size, net)
-                val_outputs = (val_outputs.sigmoid() >= 0.5).float()
+                val_outputs = post_trans(val_outputs)
+                # val_outputs = (val_outputs.sigmoid() >= 0.5).float()
 
         else:
             metric_sum = 0.0
             metric_count = 0
             for val_data in val_loader:
                 val_images, val_labels = val_data["image"].cuda(), val_data["label"].cuda()
-                # define sliding window size and batch size for windows inference
                 val_outputs = sliding_window_inference(val_images, roi_size, sw_batch_size, net)
-                value = dice_metric(y_pred=val_outputs, y=val_labels)
+                val_outputs = post_trans(val_outputs)
+                value, _ = dice_metric(y_pred=val_outputs, y=val_labels)
                 metric_count += len(value)
                 metric_sum += value.item() * len(value)
-                val_outputs = (val_outputs.sigmoid() >= 0.5).float()
+                # val_outputs = (val_outputs.sigmoid() >= 0.5).float()
 
             metric = metric_sum / metric_count
             print("Evaluation Metric (Dice):", metric)
 
         result_array = val_outputs.squeeze().data.cpu().numpy()
+        # Remove the pad if the image was smaller than the patch in some directions
+        result_array = result_array[0:resampled_size[0],0:resampled_size[1],0:resampled_size[2]]
 
+        # resample back to the original resolution
         if resolution is not None:
 
-            reader = sitk.ImageFileReader()
-            reader.SetFileName(image)
-            image_itk = reader.Execute()
+            result_array_np = np.transpose(result_array, (2, 1, 0))
+            result_array_temp = sitk.GetImageFromArray(result_array_np)
+            result_array_temp.SetSpacing(resolution)
+            label = resample_sitk_image(result_array_temp, spacing=original_resolution, interpolator='nearest')
+            res = resize(label, crop_shape, sitk.sitkNearestNeighbor)
 
-            res = sitk.GetImageFromArray(np.transpose(result_array, (2, 1, 0)))
-            res = resize(res, (sitk.GetArrayFromImage(image_itk)).shape[::-1], sitk.sitkNearestNeighbor)
-            res = (np.rint(sitk.GetArrayFromImage(res)))
-            res = sitk.GetImageFromArray(res)
-            res.SetDirection(image_itk.GetDirection())
-            res.SetOrigin(image_itk.GetOrigin())
-            res.SetSpacing(image_itk.GetSpacing())
+            result_array = np.transpose(np.rint(sitk.GetArrayFromImage(res)), axes=(2, 1, 0))
 
-        else:
-            res = from_numpy_to_itk(result_array, image)
+        # recover the cropped background before saving the image
+        empty_array = np.zeros(original_shape)
+        empty_array[coord1[0]:coord2[0],coord1[1]:coord2[1],coord1[2]:coord2[2]] = result_array
+
+        result_seg = from_numpy_to_itk(empty_array, image)
 
         # save label
         writer = sitk.ImageFileWriter()
         writer.SetFileName(result)
-        writer.Execute(res)
+        writer.Execute(result_seg)
         print("Saved Result at:", str(result))
-
-        if resolution is not None:
-
-            def dice_coeff(seg, gt):
-                """
-                function to calculate the dice score
-                """
-                seg = seg.flatten()
-                gt = gt.flatten()
-                dice = float(2 * (gt * seg).sum()) / float(gt.sum() + seg.sum())
-                return dice
-
-            y_pred = sitk.GetArrayFromImage(sitk.ReadImage(result))
-            y_true = sitk.GetArrayFromImage(sitk.ReadImage(label))
-
-            print("Dice after resampling to original resolution:", dice_coeff(y_pred, y_true))
 
 
 if __name__ == "__main__":
 
     segment(args.image, args.label, args.result, args.weights, args.resolution, args.patch_size)
+
+
 
 
 
