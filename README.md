@@ -9,7 +9,7 @@ This is my "open-box" version if I want to modify the parameters for some partic
 
 *******************************************************************************
 ## Requirements
-Follow the steps in "installation_commands.txt"
+Follow the steps in "installation_commands.txt". Installation via Anaconda and creation of a virtual env to download the python libraries and pytorch/cuda.
 *******************************************************************************
 ## Python scripts and their function
 
