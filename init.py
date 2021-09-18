@@ -23,8 +23,8 @@ class Options():
         # dataset parameters
         parser.add_argument('--patch_size', default=(160, 160, 32), help='Size of the patches extracted from the image')
         parser.add_argument('--spacing', default=[2.25, 2.25, 3], help='Original Resolution')
-        parser.add_argument('--resolution', default=None, help='New Resolution, if you want to resample the data')
-        parser.add_argument('--batch_size', type=int, default=4, help='batch size')
+        parser.add_argument('--resolution', default=None, help='New Resolution, if you want to resample the data in training. I suggest to resample in organize_folder_structure.py, otherwise in train resampling is slower')
+        parser.add_argument('--batch_size', type=int, default=4, help='batch size, depends on your machine')
         parser.add_argument('--in_channels', default=1, type=int, help='Channels of the input')
         parser.add_argument('--out_channels', default=1, type=int, help='Channels of the output')
 

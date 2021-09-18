@@ -9,12 +9,12 @@ This is my "open-box" version if I want to modify the parameters for some partic
 
 *******************************************************************************
 ## Requirements
-We download the official MONAI DockerHub, with the latest MONAI version. Please visit https://docs.monai.io/en/latest/installation.html
-Additional packages can be installed with "pip install -r requirements.txt"
+Follow the steps in "installation_commands.txt"
 *******************************************************************************
 ## Python scripts and their function
 
-- organize_folder_structure.py: Organize the data in the folder structure (training,validation,testing) for the network. Labels are resampled and resized to the corresponding image, to avoid conflicts.
+- organize_folder_structure.py: Organize the data in the folder structure (training,validation,testing) for the network. 
+Labels are resampled and resized to the corresponding image, to avoid conflicts. You can set here a new image resolution for the dataset. 
 
 - init.py: List of options used to train the network. 
 
@@ -67,11 +67,13 @@ Data structure after running it:
 	|   |   └── test             
 	|   |   |   ├── label5.nii              
 	|   |   |   └── label6.nii
+	
+Set the resolution of the images here before training.
  
 *******************************************************************************
 ### Training:
 - Modify the "init.py" to set the parameters and start the training/testing on the data. Read the descriptions for each parameter.
-- Afterwards launch the train.py for training. Tensorboard is available to monitor the training:	
+- Afterwards launch the "train.py" for training. Tensorboard is available to monitor the training:	
 
 ![training](images/salmon3.JPG)![training2](images/salmon4.JPG)
 
@@ -84,9 +86,13 @@ Sample images: on the left side the image, in the middle the result of the segme
 The following images show the multi-label segmentation of prostate transition zone and peripheral zone from MR sequence
 
 ![Image1](images/prostate.gif)![result1](images/prostate_inf.gif)![label1](images/prostate_label.gif)
+
+- Check and modify the train_transforms applied to the images  in "train.py" for your specific case. (e.g. Now there is a HU windowing for CT images)
 *******************************************************************************
 ### Inference:
 Launch "predict_single_image.py" to test the network. Modify the parameters in the parse section to select the path of the weights, images to infer and result. 
+You can test the model on a new image, with different size and resolution from the training. The script will resample it before the inference and give you a mask
+with same size and resolution of the source image.
 *******************************************************************************
 ### Tips:
 - Use and modify "check_loader_patches.py" to check the patches fed during training. 
@@ -97,9 +103,9 @@ Launch "predict_single_image.py" to test the network. Modify the parameters in t
 
 
 ### Sample script inference
-- The label can be omitted (None) if you segment an unknown image. You can add the --resolution if you resampled the data during training (look at the argsparse in the code).
+- The label can be omitted (None) if you segment an unknown image. You have to add the --resolution if you resampled the data during training (look at the argsparse in the code).
 ```console
-python predict_single_image.py --image './Data_folder/images/train/image13.nii' --label './Data_folder/labels/train/label13.nii' --result './Data_folder/results/train/prova.nii' --weights './best_metric_model.pth'
+python predict_single_image.py --image './Data_folder/image.nii' --label './Data_folder/label.nii' --result './Data_folder/prova.nii' --weights './best_metric_model.pth'
 ```
 *******************************************************************************
 ### Multi-channel segmentation: 
