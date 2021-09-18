@@ -244,7 +244,8 @@ def segment(image, label, result, weights, resolution, patch_size, channels):
         result_array = val_outputs.squeeze().data.cpu().numpy()
 
         empty_array = np.zeros(result_array[0].shape)
-        for i in range(channels):
+		
+        for i in range(channels):                     # MULTI LABEL segmentation part
             channel_i = result_array[i]
             if i == 0:
                 channel_i = np.where(channel_i == 1, 0, channel_i)
@@ -281,6 +282,17 @@ def segment(image, label, result, weights, resolution, patch_size, channels):
 
 
 if __name__ == "__main__":
+
+	parser = argparse.ArgumentParser()
+	parser.add_argument("--image", type=str, default='./Data_folder/images/test/image0.nii')
+	parser.add_argument("--label", type=str, default='./Data_folder/labels/test/label0.nii')
+	parser.add_argument("--result", type=str, default='./Data_folder/test.nii', help='path to the .nii result to save')
+	parser.add_argument("--weights", type=str, default='./best_metric_model.pth', help='network weights to load')
+	parser.add_argument("--resolution", default=(0.6, 0.6, 3), help='New resolution if you want to resample')
+	parser.add_argument("--out_channels", default=3, help='Number of labels')
+	parser.add_argument("--patch_size", type=int, nargs=3, default=(256, 256, 32), help="Input dimension for the generator")
+	parser.add_argument('--gpu_ids', type=str, default='2,3', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
+	args = parser.parse_args()
 
     segment(args.image, args.label, args.result, args.weights, args.resolution, args.patch_size, args.out_channels)
 
