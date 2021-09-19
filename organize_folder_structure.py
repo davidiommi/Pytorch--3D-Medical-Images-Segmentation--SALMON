@@ -15,7 +15,7 @@ if __name__ == "__main__":
     parser.add_argument('--split_val', default=30, help='number of images for validation')
     parser.add_argument('--split_test', default=30, help='number of images for testing')
     parser.add_argument('--resolution', default=[2.25, 2.25, 3], help='New Resolution, if you want to resample the data')
-	parser.add_argument('--smooth', default=False, help='Set True if you want to smooth a bit the binary mask')
+    parser.add_argument('--smooth', default=False, help='Set True if you want to smooth a bit the binary mask')
     args = parser.parse_args()
 
     list_images = lstFiles(args.images)
@@ -63,7 +63,7 @@ if __name__ == "__main__":
 
         image = resample_sitk_image(image, spacing=args.resolution, interpolator='linear', fill_value=0)
         image, label = uniform_img_dimensions(image, label, nearest=True)
-		if args.smooth is True:
+        if args.smooth is True:
             label = gaussian2(label)
 
         image_directory = os.path.join('./Data_folder/images/train', f"image{i:d}.nii")
