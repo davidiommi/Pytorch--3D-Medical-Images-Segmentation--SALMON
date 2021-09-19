@@ -14,7 +14,7 @@ Follow the steps in "installation_commands.txt". Installation via Anaconda and c
 ## Python scripts and their function
 
 - organize_folder_structure.py: Organize the data in the folder structure (training,validation,testing) for the network. 
-Labels are resampled and resized to the corresponding image, to avoid conflicts. You can set here a new image resolution for the dataset. 
+Labels are resampled and resized to the corresponding image, to avoid array size conflicts. You can set here a new image resolution for the dataset. 
 
 - init.py: List of options used to train the network. 
 
@@ -74,33 +74,28 @@ Set the resolution of the images here before training.
 ### Training:
 - Modify the "init.py" to set the parameters and start the training/testing on the data. Read the descriptions for each parameter.
 - Afterwards launch the "train.py" for training. Tensorboard is available to monitor the training:	
+- Check and modify the train_transforms applied to the images  in "train.py" for your specific case. (e.g. In the last update there is a HU windowing for CT images)
 
 ![training](images/salmon3.JPG)![training2](images/salmon4.JPG)
 
-Sample images: on the left side the image, in the middle the result of the segmentation and on the right side the true label
-The following images show the segmentation of carotid artery from MR sequence
+Sample images: the following images show the segmentation of carotid artery from MRI sequence
 
-![Image](images/image.gif)![result](images/result.gif)![label](images/label.gif)
+![Image](images/image.gif)![result](images/result.gif)
 
-Sample images: on the left side the image, in the middle the result of the segmentation and on the right side the true label
-The following images show the multi-label segmentation of prostate transition zone and peripheral zone from MR sequence
+Sample images: the following images show the multi-label segmentation of prostate transition zone and peripheral zone from MRI sequence
 
 ![Image1](images/prostate.gif)![result1](images/prostate_inf.gif)![label1](images/prostate_label.gif)
 
-- Check and modify the train_transforms applied to the images  in "train.py" for your specific case. (e.g. Now there is a HU windowing for CT images)
 *******************************************************************************
 ### Inference:
-Launch "predict_single_image.py" to test the network. Modify the parameters in the parse section to select the path of the weights, images to infer and result. 
-You can test the model on a new image, with different size and resolution from the training. The script will resample it before the inference and give you a mask
+- Launch "predict_single_image.py" to test the network. Modify the parameters in the parse section to select the path of the weights, images to infer and result. 
+- You can test the model on a new image, with different size and resolution from the training. The script will resample it before the inference and give you a mask
 with same size and resolution of the source image.
 *******************************************************************************
 ### Tips:
 - Use and modify "check_loader_patches.py" to check the patches fed during training. 
-- "Organize_folder_structure.py" solves dimensionality conflicts if the label has different size and resolution of the image. Check on 3DSlicer or ITKSnap if your data are correctly centered-overlaid.
 - The "networks.py" calls the nn-Unet, which adapts itself to the input data (resolution and patches size). The script also saves the graph of you network, so you can visualize it. 
 - Is it possible to add other networks, but for segmentation the U-net architecture is the state of the art.
-- During the training phase, the script crops the image background and pad the image if the post-cropping size is smaller than the patch size you set in init.py
-
 
 ### Sample script inference
 - The label can be omitted (None) if you segment an unknown image. You have to add the --resolution if you resampled the data during training (look at the argsparse in the code).
