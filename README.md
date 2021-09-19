@@ -30,7 +30,7 @@ Labels are resampled and resized to the corresponding image, to avoid array size
 ### Folders structure:
 
 Use first "organize_folder_structure.py" to create organize the data.
-Modify the input parameters to select the two folders: images and labels folders with the dataset.
+Modify the input parameters to select the two folders: images and labels folders with the dataset. Set the resolution of the images here before training.
 
     .
 	├── Data_folder                   
@@ -70,8 +70,6 @@ Data structure after running it:
 	|   |   |   ├── label5.nii              
 	|   |   |   └── label6.nii
 	
-Set the resolution of the images here before training.
- 
 *******************************************************************************
 ### Training:
 - Modify the "init.py" to set the parameters and start the training/testing on the data. Read the descriptions for each parameter.
