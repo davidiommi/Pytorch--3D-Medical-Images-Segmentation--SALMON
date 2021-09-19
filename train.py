@@ -95,8 +95,8 @@ def main():
         train_transforms = [
             LoadImaged(keys=['image', 'label']),
             AddChanneld(keys=['image', 'label']),
-            ThresholdIntensityd(keys=['image'], threshold=-135, above=True, cval=-135),  # CT HU filter
-            ThresholdIntensityd(keys=['image'], threshold=215, above=False, cval=215),
+            # ThresholdIntensityd(keys=['image'], threshold=-135, above=True, cval=-135),  # CT HU filter
+            # ThresholdIntensityd(keys=['image'], threshold=215, above=False, cval=215),
             CropForegroundd(keys=['image', 'label'], source_key='image'),               # crop CropForeground
 
             NormalizeIntensityd(keys=['image']),                                          # augmentation
@@ -128,8 +128,8 @@ def main():
         val_transforms = [
             LoadImaged(keys=['image', 'label']),
             AddChanneld(keys=['image', 'label']),
-            ThresholdIntensityd(keys=['image'], threshold=-135, above=True, cval=-135),
-            ThresholdIntensityd(keys=['image'], threshold=215, above=False, cval=215),
+            # ThresholdIntensityd(keys=['image'], threshold=-135, above=True, cval=-135),
+            # ThresholdIntensityd(keys=['image'], threshold=215, above=False, cval=215),
             CropForegroundd(keys=['image', 'label'], source_key='image'),                   # crop CropForeground
 
             NormalizeIntensityd(keys=['image']),                                      # intensity
@@ -143,8 +143,8 @@ def main():
         train_transforms = [
             LoadImaged(keys=['image', 'label']),
             AddChanneld(keys=['image', 'label']),
-            ThresholdIntensityd(keys=['image'], threshold=-135, above=True, cval=-135),
-            ThresholdIntensityd(keys=['image'], threshold=215, above=False, cval=215),
+            # ThresholdIntensityd(keys=['image'], threshold=-135, above=True, cval=-135),
+            # ThresholdIntensityd(keys=['image'], threshold=215, above=False, cval=215),
             CropForegroundd(keys=['image', 'label'], source_key='image'),               # crop CropForeground
 
             NormalizeIntensityd(keys=['image']),                                          # augmentation
@@ -175,8 +175,8 @@ def main():
         val_transforms = [
             LoadImaged(keys=['image', 'label']),
             AddChanneld(keys=['image', 'label']),
-            ThresholdIntensityd(keys=['image'], threshold=-135, above=True, cval=-135),
-            ThresholdIntensityd(keys=['image'], threshold=215, above=False, cval=215),
+            # ThresholdIntensityd(keys=['image'], threshold=-135, above=True, cval=-135),
+            # ThresholdIntensityd(keys=['image'], threshold=215, above=False, cval=215),
             CropForegroundd(keys=['image', 'label'], source_key='image'),                   # crop CropForeground
 
             NormalizeIntensityd(keys=['image']),                                      # intensity
