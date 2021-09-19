@@ -73,10 +73,8 @@ Data structure after running it:
 *******************************************************************************
 ### Training:
 - Modify the "init.py" to set the parameters and start the training/testing on the data. Read the descriptions for each parameter.
-- Afterwards launch the "train.py" for training. Tensorboard is available to monitor the training:	
+- Afterwards launch the "train.py" for training. Tensorboard is available to monitor the training ("runs" folder created)	
 - Check and modify the train_transforms applied to the images  in "train.py" for your specific case. (e.g. In the last update there is a HU windowing for CT images)
-
-![training](images/salmon3.JPG)![training2](images/salmon4.JPG)
 
 Sample images: the following images show the segmentation of carotid artery from MRI sequence
 
