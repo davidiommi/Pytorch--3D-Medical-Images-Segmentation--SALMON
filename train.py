@@ -64,11 +64,11 @@ def main():
     test_images = sorted(glob(os.path.join(opt.images_folder, 'test', 'image*.nii')))
     test_segs = sorted(glob(os.path.join(opt.labels_folder, 'test', 'label*.nii')))
 
-    # # augment the data list for training
-    # for i in range(int(opt.increase_factor_data)):
-    #
-    #     train_images.extend(train_images)
-    #     train_segs.extend(train_segs)
+    # augment the data list for training
+    for i in range(int(opt.increase_factor_data)):
+    
+        train_images.extend(train_images)
+        train_segs.extend(train_segs)
 
     print('Number of training patches per epoch:', len(train_images))
     print('Number of training images per epoch:', len(train_images_for_dice))
@@ -90,15 +90,13 @@ def main():
                  for image_name, label_name in zip(test_images, test_segs)]
 
     # Transforms list
-    # Need to concatenate multiple channels here if you want multichannel segmentation
-    # Check other examples on Monai webpage.
 
     if opt.resolution is not None:
         train_transforms = [
             LoadImaged(keys=['image', 'label']),
             AddChanneld(keys=['image', 'label']),
-            ThresholdIntensityd(keys=['image'], threshold=-135, above=True, cval=-135),  # CT HU filter
-            ThresholdIntensityd(keys=['image'], threshold=215, above=False, cval=215),
+            # ThresholdIntensityd(keys=['image'], threshold=-135, above=True, cval=-135),  # CT HU filter
+            # ThresholdIntensityd(keys=['image'], threshold=215, above=False, cval=215),
             CropForegroundd(keys=['image', 'label'], source_key='image'),               # crop CropForeground
 
             NormalizeIntensityd(keys=['image']),                                          # augmentation
@@ -130,8 +128,8 @@ def main():
         val_transforms = [
             LoadImaged(keys=['image', 'label']),
             AddChanneld(keys=['image', 'label']),
-            ThresholdIntensityd(keys=['image'], threshold=-135, above=True, cval=-135),
-            ThresholdIntensityd(keys=['image'], threshold=215, above=False, cval=215),
+            # ThresholdIntensityd(keys=['image'], threshold=-135, above=True, cval=-135),
+            # ThresholdIntensityd(keys=['image'], threshold=215, above=False, cval=215),
             CropForegroundd(keys=['image', 'label'], source_key='image'),                   # crop CropForeground
 
             NormalizeIntensityd(keys=['image']),                                      # intensity
@@ -145,8 +143,8 @@ def main():
         train_transforms = [
             LoadImaged(keys=['image', 'label']),
             AddChanneld(keys=['image', 'label']),
-            ThresholdIntensityd(keys=['image'], threshold=-135, above=True, cval=-135),
-            ThresholdIntensityd(keys=['image'], threshold=215, above=False, cval=215),
+            # ThresholdIntensityd(keys=['image'], threshold=-135, above=True, cval=-135),
+            # ThresholdIntensityd(keys=['image'], threshold=215, above=False, cval=215),
             CropForegroundd(keys=['image', 'label'], source_key='image'),               # crop CropForeground
 
             NormalizeIntensityd(keys=['image']),                                          # augmentation
@@ -177,8 +175,8 @@ def main():
         val_transforms = [
             LoadImaged(keys=['image', 'label']),
             AddChanneld(keys=['image', 'label']),
-            ThresholdIntensityd(keys=['image'], threshold=-135, above=True, cval=-135),
-            ThresholdIntensityd(keys=['image'], threshold=215, above=False, cval=215),
+            # ThresholdIntensityd(keys=['image'], threshold=-135, above=True, cval=-135),
+            # ThresholdIntensityd(keys=['image'], threshold=215, above=False, cval=215),
             CropForegroundd(keys=['image', 'label'], source_key='image'),                   # crop CropForeground
 
             NormalizeIntensityd(keys=['image']),                                      # intensity

@@ -14,7 +14,7 @@ if __name__ == "__main__":
     parser.add_argument('--labels', default='./Data_folder/CT_label', help='path to the labels')
     parser.add_argument('--split_val', default=30, help='number of images for validation')
     parser.add_argument('--split_test', default=30, help='number of images for testing')
-    parser.add_argument('--resolution', default=[2.25, 2.25, 3], help='New Resolution, if you want to resample the data')
+    parser.add_argument('--resolution', default=[2.25, 2.25, 3], help='New Resolution to resample the data to same spacing')
     parser.add_argument('--smooth', default=False, help='Set True if you want to smooth a bit the binary mask')
     args = parser.parse_args()
 
