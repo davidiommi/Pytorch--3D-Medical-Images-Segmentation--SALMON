@@ -84,7 +84,7 @@ Sample images: the following images show the segmentation of carotid artery from
 
 Sample images: the following images show the multi-label segmentation of prostate transition zone and peripheral zone from MRI sequence
 
-![Image1](images/prostate.gif)![result1](images/prostate_inf.gif)![label1](images/prostate_label.gif)
+![Image1](images/prostate.gif)![result1](images/prostate_inf.gif)!
 
 *******************************************************************************
 ### Inference:
