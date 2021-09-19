@@ -76,8 +76,8 @@ if __name__ == "__main__":
         LoadImaged(keys=['image', 'label']),
         AddChanneld(keys=['image', 'label']),
         Orientationd(keys=["image", "label"], axcodes="RAS"),
-        ThresholdIntensityd(keys=['image'], threshold=-135, above=True, cval=-135),
-        ThresholdIntensityd(keys=['image'], threshold=215, above=False, cval=215),
+        # ThresholdIntensityd(keys=['image'], threshold=-135, above=True, cval=-135),
+        # ThresholdIntensityd(keys=['image'], threshold=215, above=False, cval=215),
         CropForegroundd(keys=['image', 'label'], source_key='image', start_coord_key='foreground_start_coord',
                         end_coord_key='foreground_end_coord', ),  # crop CropForeground
         NormalizeIntensityd(keys=['image']),
