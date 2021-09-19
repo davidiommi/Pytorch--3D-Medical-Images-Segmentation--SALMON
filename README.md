@@ -46,7 +46,9 @@ Modify the input parameters to select the two folders: images and labels folders
 Data structure after running it:
 
 	.
-	├── Data_folder                   
+	├── Data_folder  
+	|   ├── CT  
+	|   ├── CT_labels 
 	|   ├── images              
 	|   |   ├── train             
 	|   |   |   ├── image1.nii              
