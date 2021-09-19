@@ -64,11 +64,11 @@ def main():
     test_images = sorted(glob(os.path.join(opt.images_folder, 'test', 'image*.nii')))
     test_segs = sorted(glob(os.path.join(opt.labels_folder, 'test', 'label*.nii')))
 
-    # # augment the data list for training
-    # for i in range(int(opt.increase_factor_data)):
-    #
-    #     train_images.extend(train_images)
-    #     train_segs.extend(train_segs)
+    # augment the data list for training
+    for i in range(int(opt.increase_factor_data)):
+    
+        train_images.extend(train_images)
+        train_segs.extend(train_segs)
 
     print('Number of training patches per epoch:', len(train_images))
     print('Number of training images per epoch:', len(train_images_for_dice))
@@ -90,8 +90,6 @@ def main():
                  for image_name, label_name in zip(test_images, test_segs)]
 
     # Transforms list
-    # Need to concatenate multiple channels here if you want multichannel segmentation
-    # Check other examples on Monai webpage.
 
     if opt.resolution is not None:
         train_transforms = [
