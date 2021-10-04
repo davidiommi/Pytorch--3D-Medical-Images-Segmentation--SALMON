@@ -11,7 +11,7 @@
 
 
 from init import Options
-from networks import build_net, update_learning_rate, build_UNETR
+from networks import *
 # from networks import build_net
 import logging
 import os
@@ -26,14 +26,15 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 import monai
-from monai.data import create_test_image_3d, list_data_collate, decollate_batch
+from monai.data import create_test_image_3d, list_data_collate
 from monai.inferers import sliding_window_inference
 from monai.metrics import DiceMetric
-from monai.transforms import (EnsureType, Compose, LoadImaged, AddChanneld, Transpose,Activations,AsDiscrete, RandGaussianSmoothd, CropForegroundd, SpatialPadd,
+from monai.transforms import (Compose, LoadImaged, AddChanneld, Transpose,Activations,AsDiscrete, RandGaussianSmoothd, CropForegroundd, SpatialPadd,
                               ScaleIntensityd, ToTensord, RandSpatialCropd, Rand3DElasticd, RandAffined, RandZoomd,
     Spacingd, Orientationd, Resized, ThresholdIntensityd, RandShiftIntensityd, BorderPadd, RandGaussianNoised, RandAdjustContrastd,NormalizeIntensityd,RandFlipd)
 
 from monai.visualize import plot_2d_or_3d_image
+# from monai.engines import get_devices_spec
 
 def main():
     opt = Options().parse()
@@ -190,25 +191,25 @@ def main():
 
     # create a training data loader
     check_train = monai.data.Dataset(data=train_dicts, transform=train_transforms)
-    train_loader = DataLoader(check_train, batch_size=opt.batch_size, shuffle=True, collate_fn=list_data_collate, num_workers=opt.workers, pin_memory=False)
+    train_loader = DataLoader(check_train, batch_size=opt.batch_size, shuffle=True, num_workers=opt.workers, pin_memory=False)
 
     # create a training_dice data loader
     check_val = monai.data.Dataset(data=train_dice_dicts, transform=val_transforms)
-    train_dice_loader = DataLoader(check_val, batch_size=1, num_workers=opt.workers, collate_fn=list_data_collate, pin_memory=False)
+    train_dice_loader = DataLoader(check_val, batch_size=1, num_workers=opt.workers, pin_memory=False)
 
     # create a validation data loader
     check_val = monai.data.Dataset(data=val_dicts, transform=val_transforms)
-    val_loader = DataLoader(check_val, batch_size=1, num_workers=opt.workers, collate_fn=list_data_collate, pin_memory=False)
+    val_loader = DataLoader(check_val, batch_size=1, num_workers=opt.workers, pin_memory=False)
 
     # create a validation data loader
     check_val = monai.data.Dataset(data=test_dicts, transform=val_transforms)
-    test_loader = DataLoader(check_val, batch_size=1, num_workers=opt.workers, collate_fn=list_data_collate, pin_memory=False)
+    test_loader = DataLoader(check_val, batch_size=1, num_workers=opt.workers, pin_memory=False)
+
+    # # try to use all the available GPUs
+    # devices = get_devices_spec(None)
 
     # build the network
-    if opt.network is 'nnunet':
-        net = build_net()  # nn build_net
-    elif opt.network is 'unetr':
-        net = build_UNETR() # UneTR
+    net = build_net()
     net.cuda()
 
     if num_gpus > 1:
@@ -217,27 +218,22 @@ def main():
     if opt.preload is not None:
         net.load_state_dict(torch.load(opt.preload))
 
-    dice_metric = DiceMetric(include_background=True, reduction="mean", get_not_nans=False)
-    post_trans = Compose([EnsureType(), Activations(sigmoid=True), AsDiscrete(threshold_values=True)])
+    dice_metric = DiceMetric(include_background=True, reduction="mean")
+    post_trans = Compose([Activations(sigmoid=True), AsDiscrete(threshold_values=True)])
 
     loss_function = monai.losses.DiceCELoss(sigmoid=True)
-    torch.backends.cudnn.benchmark = opt.benchmark
 
+    optim = torch.optim.SGD(net.parameters(), lr=opt.lr, momentum=0.99, weight_decay=3e-5, nesterov=True,)
 
-    if opt.network is 'nnunet':
-
-        optim = torch.optim.SGD(net.parameters(), lr=opt.lr, momentum=0.99, weight_decay=3e-5, nesterov=True,)
-        net_scheduler = torch.optim.lr_scheduler.LambdaLR(optim, lr_lambda=lambda epoch: (1 - epoch / opt.epochs) ** 0.9)
-
-    elif opt.network is 'unetr':
-
-        optim = torch.optim.AdamW(net.parameters(), lr=1e-4, weight_decay=1e-5)
+    net_scheduler = torch.optim.lr_scheduler.LambdaLR(
+        optim, lr_lambda=lambda epoch: (1 - epoch / opt.epochs) ** 0.9)
 
     # start a typical PyTorch training
     val_interval = 1
     best_metric = -1
     best_metric_epoch = -1
     epoch_loss_values = list()
+    metric_values = list()
     writer = SummaryWriter()
     for epoch in range(opt.epochs):
         print("-" * 10)
@@ -260,8 +256,7 @@ def main():
         epoch_loss /= step
         epoch_loss_values.append(epoch_loss)
         print(f"epoch {epoch + 1} average loss: {epoch_loss:.4f}")
-        if opt.network is 'nnunet':
-            update_learning_rate(net_scheduler, optim)
+        update_learning_rate(net_scheduler, optim)
 
         if (epoch + 1) % val_interval == 0:
             net.eval()
@@ -269,6 +264,8 @@ def main():
 
                 def plot_dice(images_loader):
 
+                    metric_sum = 0.0
+                    metric_count = 0
                     val_images = None
                     val_labels = None
                     val_outputs = None
@@ -277,14 +274,12 @@ def main():
                         roi_size = opt.patch_size
                         sw_batch_size = 4
                         val_outputs = sliding_window_inference(val_images, roi_size, sw_batch_size, net)
-                        val_outputs = [post_trans(i) for i in decollate_batch(val_outputs)]
-                        dice_metric(y_pred=val_outputs, y=val_labels)
-
-                    # aggregate the final mean dice result
-                    metric = dice_metric.aggregate().item()
-                    # reset the status for next validation round
-                    dice_metric.reset()
-
+                        val_outputs = post_trans(val_outputs)
+                        value, _ = dice_metric(y_pred=val_outputs, y=val_labels)
+                        metric_count += len(value)
+                        metric_sum += value.item() * len(value)
+                    metric = metric_sum / metric_count
+                    metric_values.append(metric)
                     return metric, val_images, val_labels, val_outputs
 
                 metric, val_images, val_labels, val_outputs = plot_dice(val_loader)

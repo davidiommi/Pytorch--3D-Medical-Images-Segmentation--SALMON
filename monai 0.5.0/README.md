@@ -1,12 +1,11 @@
 ![Salmon-logo-1](images/salmon.JPG)
 # SALMON v.2: Segmentation deep learning ALgorithm based on MONai toolbox
 - SALMON is a computational toolbox for segmentation using neural networks (3D patches-based segmentation)
-- SALMON is based on MONAI 0.7.0 : PyTorch-based, open-source frameworks for deep learning in healthcare imaging. 
+- SALMON is based on  NN-UNET and MONAI: PyTorch-based, open-source frameworks for deep learning in healthcare imaging. 
 (https://github.com/Project-MONAI/MONAI)
 (https://github.com/MIC-DKFZ/nnUNet)
-(https://arxiv.org/abs/2103.10504)
 
-This is my "open-box" version if I want to modify the parameters for some particular task, while the two above are hard-coded. The monai 0.5.0 folder contains the previous versions based on the old monai version.
+This is my "open-box" version if I want to modify the parameters for some particular task, while the two above are hard-coded.
 
 *******************************************************************************
 ## Requirements
@@ -21,7 +20,7 @@ Labels are resampled and resized to the corresponding image, to avoid array size
 
 - check_loader_patches: Shows example of patches fed to the network during the training.  
 
-- networks.py: The architectures available for segmentation are nn-Unet and UneTR (based on Visual transformers)
+- networks.py: The architecture available for segmentation is a nn-Unet.
 
 - train.py: Runs the training
 
@@ -94,7 +93,6 @@ with same size and resolution of the source image.
 ### Tips:
 - Use and modify "check_loader_patches.py" to check the patches fed during training. 
 - The "networks.py" calls the nn-Unet, which adapts itself to the input data (resolution and patches size). The script also saves the graph of you network, so you can visualize it. 
-- "networks.py" includes also UneTR (based on Visual transformers). This is experimental. For more info check (https://arxiv.org/abs/2103.10504) and https://github.com/Project-MONAI/tutorials/blob/master/3d_segmentation/unetr_btcv_segmentation_3d.ipynb
 - Is it possible to add other networks, but for segmentation the U-net architecture is the state of the art.
 
 ### Sample script inference
@@ -110,27 +108,9 @@ The example segment the prostate (1 channel input) in the transition zone and pe
 The gif files with some example images are shown above.
 
 Some note:
+- You must add an additional channel for the background. Example: 0 background, 1 prostate, 2 prostate tumor = 3 out channels in total.
 - Tensorboard can show you all segmented channels, but for now the metric is the Mean-Dice (of all channels). If you want to evaluate the Dice score for each channel you 
   have to modify a bit the plot_dice function. I will do it...one day...who knows...maybe not
 - The loss is the DiceLoss + CrossEntropy. You can modify it if you want to try others (https://docs.monai.io/en/latest/losses.html#diceloss)
 
-Check more examples at https://github.com/Project-MONAI/tutorials/blob/master/3d_segmentation/.
-
-UneTR Notes from the authors:
-
-Feature_size and pos_embed are the parameters that need to changed to adopt it for your application of interest. Other parameters that are mentioned come from Vision Transformer (ViT) default hyper-parameters (original architecture). In addition, the new revision of UNETR paper with more descriptions is now publicly available. Please check for more details:
-https://arxiv.org/pdf/2103.10504.pdf
-
-Now let's look at each of these hyper-parameters in the order of importance:
-
-feature_size : In UNETR, we multiply the size of the CNN-based features in the decoder by a factor of 2 at every resolution ( just like the original UNet paper). By default, we set this value to 16 ( to make the entire network lighter). However using larger values such as 32 can improve the segmentation performance if GPU memory is not an issue. Figure2 of the paper also shows this in details.
-
-pos_embed: this determines how the image is divided into non-overlapping patches. Essentially, there are 2 ways to achieve this ( by setting it to conv or perceptron). Let's further dive into it for more information:
-First is by directly applying a convolutional layer with the same stride and kernel size of the patch size and with feature size of the hidden size in the ViT model. Second is by first breaking the image into patches by properly resizing the tensor ( for which we use einops) and then feed it into a perceptron (linear) layer with a hidden size of the ViT model. Our experiments show that for certain applications such as brain segmentation with multiple modalities (e.g. 4 modes such as T1,T2 etc.), using the convolutional layer works better as it takes into account all modes concurrently. For CT images ( e.g. BTCV multi-organ segmentation), we did not see any difference in terms of performance between these two approaches.
-
-hidden_size : this is the size of the hidden layers in the ViT encoder. We follow the original ViT model and set this value to 768. In addition, the hidden size should be divisible by the number of attention heads in the ViT model.
-
-num_heads : in the multi-headed self-attention block, this is the number of attention heads. Following the ViT architecture, we set it to 12.
-
-mlp_dim : this is the dimension of the multi-layer perceptrons (MLP) in the transformer encoder. Again, we follow the ViT model and set this to 3072 as default value to be consistent with their architecture.
-
+Check more examples at https://github.com/Project-MONAI/tutorials/blob/master/3d_segmentation/spleen_segmentation_3d.ipynb.

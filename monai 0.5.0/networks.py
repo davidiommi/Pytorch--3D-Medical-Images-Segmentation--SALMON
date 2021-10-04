@@ -1,6 +1,5 @@
-# from train import *
+from train import *
 from torch.nn import init
-from init import Options
 import monai
 from torch.optim import lr_scheduler
 
@@ -112,32 +111,6 @@ def build_net():
     return nn_Unet
 
 
-def build_UNETR():
-
-    from init import Options
-    opt = Options().parse()
-
-    # create UneTR
-
-    UneTR = monai.networks.nets.UNETR(
-        in_channels=opt.in_channels,
-        out_channels=opt.out_channels,
-        img_size=opt.patch_size,
-        feature_size=32,
-        hidden_size=768,
-        mlp_dim=3072,
-        num_heads=12,
-        pos_embed="conv",
-        norm_name="instance",
-        res_block=True,
-        dropout_rate=0.0,
-    )
-
-    init_weights(UneTR, init_type='normal')
-
-    return UneTR
-
-
 if __name__ == '__main__':
     import time
     import torch
@@ -148,15 +121,14 @@ if __name__ == '__main__':
     opt = Options().parse()
 
     torch.cuda.set_device(0)
-    # network = build_net()
-    network = build_UNETR()
+    network = build_net()
     net = network.cuda().eval()
 
     data = Variable(torch.randn(1, int(opt.in_channels), int(opt.patch_size[0]), int(opt.patch_size[1]), int(opt.patch_size[2]))).cuda()
 
     out = net(data)
 
-    # torch.onnx.export(net, data, "Unet_model_graph.onnx")
+    torch.onnx.export(net, data, "Unet_model_graph.onnx")
 
     summary(net,data)
     print("out size: {}".format(out.size()))

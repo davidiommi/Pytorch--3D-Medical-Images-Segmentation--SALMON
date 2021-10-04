@@ -5,7 +5,7 @@
 2) install pytorch    conda install pytorch==1.5.0 torchvision==0.6.0 cudatoolkit=10.1 -c pytorch    # this for cuda (check your cuda version)
 
 3)    conda install git pip
-4)    pip install git+https://github.com/davidiommi/MONAI_0_7_0.git    # dowload libraries
+4)    pip install git+git://github.com/davidiommi/MONAI    # dowload libraries
 5)    pip install -r requirements.txt                      # dowload libraries
 
  

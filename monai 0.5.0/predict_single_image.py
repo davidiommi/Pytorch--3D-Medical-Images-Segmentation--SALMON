@@ -3,16 +3,13 @@
 
 from utils import *
 import argparse
-from networks import build_net, build_UNETR
+from networks import *
 from monai.inferers import sliding_window_inference
 from monai.metrics import DiceMetric
-from monai.data import NiftiSaver, create_test_image_3d, list_data_collate, decollate_batch
-from monai.transforms import (EnsureType, Compose, LoadImaged, AddChanneld, Transpose,Activations,AsDiscrete, RandGaussianSmoothd, CropForegroundd, SpatialPadd,
-                              ScaleIntensityd, ToTensord, RandSpatialCropd, Rand3DElasticd, RandAffined, RandZoomd,
-                              Spacingd, Orientationd, Resized, ThresholdIntensityd, RandShiftIntensityd, BorderPadd, RandGaussianNoised, RandAdjustContrastd,NormalizeIntensityd,RandFlipd)
+from monai.data import NiftiSaver, create_test_image_3d, list_data_collate
 
 
-def segment(image, label, result, weights, resolution, patch_size, network, gpu_ids):
+def segment(image, label, result, weights, resolution, patch_size, gpu_ids):
 
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
@@ -33,8 +30,8 @@ def segment(image, label, result, weights, resolution, patch_size, network, gpu_
             val_transforms = Compose([
                 LoadImaged(keys=['image', 'label']),
                 AddChanneld(keys=['image', 'label']),
-                # ThresholdIntensityd(keys=['image'], threshold=-135, above=True, cval=-135),  # Threshold CT
-                # ThresholdIntensityd(keys=['image'], threshold=215, above=False, cval=215),
+                ThresholdIntensityd(keys=['image'], threshold=-135, above=True, cval=-135),  # Threshold CT
+                ThresholdIntensityd(keys=['image'], threshold=215, above=False, cval=215),
                 CropForegroundd(keys=['image', 'label'], source_key='image'),  # crop CropForeground
 
                 NormalizeIntensityd(keys=['image']),  # intensity
@@ -48,8 +45,8 @@ def segment(image, label, result, weights, resolution, patch_size, network, gpu_
             val_transforms = Compose([
                 LoadImaged(keys=['image', 'label']),
                 AddChanneld(keys=['image', 'label']),
-                # ThresholdIntensityd(keys=['image'], threshold=-135, above=True, cval=-135),  # Threshold CT
-                # ThresholdIntensityd(keys=['image'], threshold=215, above=False, cval=215),
+                ThresholdIntensityd(keys=['image'], threshold=-135, above=True, cval=-135),  # Threshold CT
+                ThresholdIntensityd(keys=['image'], threshold=215, above=False, cval=215),
                 CropForegroundd(keys=['image', 'label'], source_key='image'),  # crop CropForeground
 
                 NormalizeIntensityd(keys=['image']),  # intensity
@@ -64,8 +61,8 @@ def segment(image, label, result, weights, resolution, patch_size, network, gpu_
             val_transforms = Compose([
                 LoadImaged(keys=['image']),
                 AddChanneld(keys=['image']),
-                # ThresholdIntensityd(keys=['image'], threshold=-135, above=True, cval=-135),  # Threshold CT
-                # ThresholdIntensityd(keys=['image'], threshold=215, above=False, cval=215),
+                ThresholdIntensityd(keys=['image'], threshold=-135, above=True, cval=-135),  # Threshold CT
+                ThresholdIntensityd(keys=['image'], threshold=215, above=False, cval=215),
                 CropForegroundd(keys=['image'], source_key='image'),  # crop CropForeground
 
                 NormalizeIntensityd(keys=['image']),  # intensity
@@ -79,8 +76,8 @@ def segment(image, label, result, weights, resolution, patch_size, network, gpu_
             val_transforms = Compose([
                 LoadImaged(keys=['image']),
                 AddChanneld(keys=['image']),
-                # ThresholdIntensityd(keys=['image'], threshold=-135, above=True, cval=-135),  # Threshold CT
-                # ThresholdIntensityd(keys=['image'], threshold=215, above=False, cval=215),
+                ThresholdIntensityd(keys=['image'], threshold=-135, above=True, cval=-135),  # Threshold CT
+                ThresholdIntensityd(keys=['image'], threshold=215, above=False, cval=215),
                 CropForegroundd(keys=['image'], source_key='image'),  # crop CropForeground
 
                 NormalizeIntensityd(keys=['image']),  # intensity
@@ -92,8 +89,8 @@ def segment(image, label, result, weights, resolution, patch_size, network, gpu_
     val_ds = monai.data.Dataset(data=files, transform=val_transforms)
     val_loader = DataLoader(val_ds, batch_size=1, num_workers=0, collate_fn=list_data_collate, pin_memory=False)
 
-    dice_metric = DiceMetric(include_background=True, reduction="mean", get_not_nans=False)
-    post_trans = Compose([EnsureType(), Activations(sigmoid=True), AsDiscrete(threshold_values=True)])
+    dice_metric = DiceMetric(include_background=True, reduction="mean")
+    post_trans = Compose([Activations(sigmoid=True), AsDiscrete(threshold_values=True)])
 
     if gpu_ids != '-1':
 
@@ -104,12 +101,7 @@ def segment(image, label, result, weights, resolution, patch_size, network, gpu_
     else:
         device = torch.device("cpu")
 
-    # build the network
-    if network is 'nnunet':
-        net = build_net()  # nn build_net
-    elif network is 'unetr':
-        net = build_UNETR() # UneTR
-
+    net = build_net()
     net = net.to(device)
 
     if gpu_ids == '-1':
@@ -131,19 +123,25 @@ def segment(image, label, result, weights, resolution, patch_size, network, gpu_
             for val_data in val_loader:
                 val_images = val_data["image"].cuda()
                 val_outputs = sliding_window_inference(val_images, roi_size, sw_batch_size, net)
-                val_outputs = [post_trans(i) for i in decollate_batch(val_outputs)]
+                val_outputs = post_trans(val_outputs)
+                # val_outputs = (val_outputs.sigmoid() >= 0.5).float()
 
         else:
+            metric_sum = 0.0
+            metric_count = 0
             for val_data in val_loader:
                 val_images, val_labels = val_data["image"].cuda(), val_data["label"].cuda()
                 val_outputs = sliding_window_inference(val_images, roi_size, sw_batch_size, net)
-                val_outputs = [post_trans(i) for i in decollate_batch(val_outputs)]
-                dice_metric(y_pred=val_outputs, y=val_labels)
+                val_outputs = post_trans(val_outputs)
+                value, _ = dice_metric(y_pred=val_outputs, y=val_labels)
+                metric_count += len(value)
+                metric_sum += value.item() * len(value)
+                # val_outputs = (val_outputs.sigmoid() >= 0.5).float()
 
-            metric = dice_metric.aggregate().item()
+            metric = metric_sum / metric_count
             print("Evaluation Metric (Dice):", metric)
 
-        result_array = val_outputs[0].squeeze().data.cpu().numpy()
+        result_array = val_outputs.squeeze().data.cpu().numpy()
         # Remove the pad if the image was smaller than the patch in some directions
         result_array = result_array[0:resampled_size[0],0:resampled_size[1],0:resampled_size[2]]
 
@@ -196,17 +194,16 @@ def segment(image, label, result, weights, resolution, patch_size, network, gpu_
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--image", type=str, default='./Data_folder/T2/3.nii', help='source image' )
-    parser.add_argument("--label", type=str, default='./Data_folder/T2_labels/3.nii', help='source label, if you want to compute dice. None for new case')
+    parser.add_argument("--image", type=str, default='./Data_folder/CT/0.nii', help='source image' )
+    parser.add_argument("--label", type=str, default=None, help='source label, if you want to compute dice. None for new case')
     parser.add_argument("--result", type=str, default='./Data_folder/test_0.nii', help='path to the .nii result to save')
     parser.add_argument("--weights", type=str, default='./best_metric_model.pth', help='network weights to load')
-    parser.add_argument("--resolution", default=[0.7, 0.7, 3], help='Resolution used in training phase')
-    parser.add_argument("--patch_size", type=int, nargs=3, default=(256, 256, 16), help="Input dimension for the generator, same of training")
-    parser.add_argument('--network', default='unetr', help='nnunet, unetr')
+    parser.add_argument("--resolution", default=[2.25, 2.25, 3], help='Resolution used in training phase')
+    parser.add_argument("--patch_size", type=int, nargs=3, default=(160, 160, 32), help="Input dimension for the generator, same of training")
     parser.add_argument('--gpu_ids', type=str, default='0', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
     args = parser.parse_args()
 
-    segment(args.image, args.label, args.result, args.weights, args.resolution, args.patch_size, args.network, args.gpu_ids)
+    segment(args.image, args.label, args.result, args.weights, args.resolution, args.patch_size, args.gpu_ids)
 
 
 
