@@ -118,14 +118,14 @@ https://arxiv.org/pdf/2103.10504.pdf
 
 Now let's look at each of these hyper-parameters in the order of importance:
 
-feature_size : In UNETR, we multiply the size of the CNN-based features in the decoder by a factor of 2 at every resolution ( just like the original UNet paper). By default, we set this value to 16 ( to make the entire network lighter). However using larger values such as 32 can improve the segmentation performance if GPU memory is not an issue. Figure2 of the paper also shows this in details.
+- feature_size : In UNETR, we multiply the size of the CNN-based features in the decoder by a factor of 2 at every resolution ( just like the original UNet paper). By default, we set this value to 16 ( to make the entire network lighter). However using larger values such as 32 can improve the segmentation performance if GPU memory is not an issue. Figure2 of the paper also shows this in details.
 
-pos_embed: this determines how the image is divided into non-overlapping patches. Essentially, there are 2 ways to achieve this ( by setting it to conv or perceptron). Let's further dive into it for more information:
+- pos_embed: this determines how the image is divided into non-overlapping patches. Essentially, there are 2 ways to achieve this ( by setting it to conv or perceptron). Let's further dive into it for more information:
 First is by directly applying a convolutional layer with the same stride and kernel size of the patch size and with feature size of the hidden size in the ViT model. Second is by first breaking the image into patches by properly resizing the tensor ( for which we use einops) and then feed it into a perceptron (linear) layer with a hidden size of the ViT model. Our experiments show that for certain applications such as brain segmentation with multiple modalities (e.g. 4 modes such as T1,T2 etc.), using the convolutional layer works better as it takes into account all modes concurrently. For CT images ( e.g. BTCV multi-organ segmentation), we did not see any difference in terms of performance between these two approaches.
 
-hidden_size : this is the size of the hidden layers in the ViT encoder. We follow the original ViT model and set this value to 768. In addition, the hidden size should be divisible by the number of attention heads in the ViT model.
+- hidden_size : this is the size of the hidden layers in the ViT encoder. We follow the original ViT model and set this value to 768. In addition, the hidden size should be    divisible by the number of attention heads in the ViT model.
 
-num_heads : in the multi-headed self-attention block, this is the number of attention heads. Following the ViT architecture, we set it to 12.
+- num_heads : in the multi-headed self-attention block, this is the number of attention heads. Following the ViT architecture, we set it to 12.
 
-mlp_dim : this is the dimension of the multi-layer perceptrons (MLP) in the transformer encoder. Again, we follow the ViT model and set this to 3072 as default value to be consistent with their architecture.
+- mlp_dim : this is the dimension of the multi-layer perceptrons (MLP) in the transformer encoder. Again, we follow the ViT model and set this to 3072 as default value to be     consistent with their architecture.
 
