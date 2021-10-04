@@ -103,20 +103,15 @@ with same size and resolution of the source image.
 python predict_single_image.py --image './Data_folder/image.nii' --label './Data_folder/label.nii' --result './Data_folder/prova.nii' --weights './best_metric_model.pth'
 ```
 *******************************************************************************
-### Multi-channel segmentation: 
 
-The subfolder "multi_label_segmentation_example" include the modified code for multi_labels scenario.
-The example segment the prostate (1 channel input) in the transition zone and peripheral zone (2 channels output). 
-The gif files with some example images are shown above.
-
-Some note:
+### Some note:
 - Tensorboard can show you all segmented channels, but for now the metric is the Mean-Dice (of all channels). If you want to evaluate the Dice score for each channel you 
   have to modify a bit the plot_dice function. I will do it...one day...who knows...maybe not
 - The loss is the DiceLoss + CrossEntropy. You can modify it if you want to try others (https://docs.monai.io/en/latest/losses.html#diceloss)
 
 Check more examples at https://github.com/Project-MONAI/tutorials/blob/master/3d_segmentation/.
 
-UneTR Notes from the authors:
+### UneTR Notes from the authors:
 
 Feature_size and pos_embed are the parameters that need to changed to adopt it for your application of interest. Other parameters that are mentioned come from Vision Transformer (ViT) default hyper-parameters (original architecture). In addition, the new revision of UNETR paper with more descriptions is now publicly available. Please check for more details:
 https://arxiv.org/pdf/2103.10504.pdf
