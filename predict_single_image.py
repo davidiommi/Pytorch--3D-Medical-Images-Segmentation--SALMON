@@ -129,7 +129,7 @@ def segment(image, label, result, weights, resolution, patch_size, network, gpu_
 
         if label is None:
             for val_data in val_loader:
-                val_images = val_data["image"].cuda()
+                val_images = val_data["image"].to(device)
                 val_outputs = sliding_window_inference(val_images, roi_size, sw_batch_size, net)
                 val_outputs = [post_trans(i) for i in decollate_batch(val_outputs)]
 
